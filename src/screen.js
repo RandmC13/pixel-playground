@@ -31,6 +31,7 @@ class Screen {
         this.grid = generateGrid(this.particleSize);
         this.gridWidth = this.grid.length;
         this.gridHeight = this.grid[0].length;
+        this.framenum = 0;
     };
 
     updateGrid(updates) {
@@ -65,6 +66,8 @@ class Screen {
         }
         //Enact updates
         this.updateGrid(gridUpdates);
+        //Increment framenum
+        this.framenum++;
     }
 };
 

@@ -8,7 +8,7 @@ const sketch = (p) => {
 	//Defining variables
 	let screen;
 
-	const particleSize = 10;
+	const particleSize = 8;
 
 	//Function runs once on page load
 
@@ -33,6 +33,10 @@ const sketch = (p) => {
 	p.draw = () => {
 		//Draw particles on screen
 		screen.stepSim();
+		//Every 2 frames, add sand in the middle of the screen
+		if (screen.framenum % 2 == 0) {
+			screen.grid[Math.floor(screen.gridWidth / 2)][5] = new Sand();
+		}
 	};
 };
 
