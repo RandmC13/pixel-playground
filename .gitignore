@@ -11,3 +11,6 @@
 .pnp.*
 
 p5.global-mode.d.ts
+p5.d.ts
+
+public/dist/*
