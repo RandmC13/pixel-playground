@@ -1,4 +1,3 @@
-import p5 from "p5";
 /*Potential particle properties:
 -colour
 -type
@@ -15,10 +14,12 @@ class Particle {
         this.colour = colour;
         this.type = type;
         this.static = stationary;
+        this.updateToggle = true; //toggles every frame to prevent bugs
     }
 
     update() {
-        return false;
+        //when particle updates flip updateToggle
+        this.updateToggle = !this.updateToggle;
     }
 }
 

@@ -9,21 +9,22 @@ class Sand extends Particle {
     }
 
     update(x,y,grid) {
-        let changes = [];
+        //First run default particle operations
+        super.update();
 
         const goDown = () => {
-            changes.push([x,y+1,grid[x][y]]);
-            changes.push([x,y,new Air()]);
+            grid[x][y+1] = grid[x][y];
+            grid[x][y] = new Air();
         };
 
         const goLeft = () => {
-            changes.push([x-1,y+1,grid[x][y]]);
-            changes.push([x,y,new Air()]);
+            grid[x-1][y+1] = grid[x][y];
+            grid[x][y] = new Air();
         };
 
         const goRight = () => {
-            changes.push([x+1,y+1,grid[x][y]]);
-            changes.push([x,y,new Air()]);
+            grid[x+1][y+1] = grid[x][y];
+            grid[x][y] = new Air();
         };
 
         //Check if sand is on the ground
@@ -35,8 +36,7 @@ class Sand extends Particle {
         //Check if sand can fall down
         if (grid[x][y+1].type == "air") {
             goDown();
-
-            return changes;
+            return true;
         }
 
         //If sand can't fall down check if it can fall left or right
@@ -54,24 +54,20 @@ class Sand extends Particle {
         if (left && right) {
             if (Math.random() < 0.5) {
                 goLeft();
-
-                return changes;
+                return true;
             }
 
             goRight();
-
-            return changes;
+            return true;
         }
 
         //If sand can only go one way, choose that way
         if (left) {
             goLeft();
-
-            return changes;
+            return true;
         } else if (right) {
             goRight();
-
-            return changes;
+            return true;
         }
 
         return false;
