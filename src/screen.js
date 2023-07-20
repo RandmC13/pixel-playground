@@ -36,6 +36,8 @@ class Screen {
         this.paused = false;
         this.framenum = 0;
         this.cursor = [0,0];
+        this.brushRadius = 0;
+        this.brushList = [];
         this.cursorType = "sand";
     };
 
@@ -75,22 +77,70 @@ class Screen {
         let gridX = Math.floor(x / this.particleSize);
         let gridY = Math.floor(y / this.particleSize);
 
+        if (gridX < 0 || gridX > this.grid.length) return false;
+        if (gridY < 0 || gridY > this.grid[0].length) return false;
+
         return [gridX,gridY];
     }
 
-    getDrawCoords(x, y) {
-        return [x*this.particleSize, y*this.particleSize];
+    getDrawCoords(gridX, gridY) {
+        return [gridX*this.particleSize, gridY*this.particleSize];
+    }
+
+    particlesInRadius(x, y, r) {
+        let absR = (r + 0.5) * this.particleSize;
+        let particles = [];
+        let minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
+
+        for (var theta=0;theta<2*Math.PI;theta+=0.05) {
+            let circleX = x + (absR * Math.sin(theta));
+            let circleY = y + (absR * Math.cos(theta));
+
+            //Loop through radi
+            for (var radius=0;radius<absR;radius+=minR) {
+                let pointX = x + (radius * Math.sin(theta));
+                let pointY = y + (radius * Math.cos(theta));
+                let point = this.getGridCoords(pointX,pointY);
+                if (!point) continue;
+                //Get center of grid position
+                let [particleX,particleY] = this.getDrawCoords(...point).map(n => n + (0.5*this.particleSize));
+                particleX = particleX - x;
+                particleY = particleY - y;
+                //Get distance of point from center
+                let distance = Math.sqrt((particleX**2) + (particleY**2));
+                //If the circle can draw a line further than the center of the particle, draw it
+                if (absR >= distance-(0.45*this.particleSize)) {
+                    //Don't include particles that go off the screen
+                    if (!particles.includes(point) && point) {
+                        particles.push(point);
+                    }
+                }
+            }
+        }
+
+        this.brushList = particles;
     }
 
     drawCursor(mouseX, mouseY) {
-        const alpha = -25;
+        const alpha = 25;
         //Set colour
         let colour = getColour(this.cursorType).map(n => n+alpha);
         this.p.fill(colour);
-        //Draw square at equivalent point based off mouse position and set internal cursor coords
+
         let [x,y] = this.getGridCoords(mouseX, mouseY);
         this.cursor = [x,y];
-        this.p.square(...this.getDrawCoords(x,y),this.particleSize);
+
+        let [centerX,centerY] = this.getDrawCoords(x,y).map(n => n+(0.5*this.particleSize));
+        this.particlesInRadius(centerX,centerY,this.brushRadius);
+
+        //Draw each particle
+        this.brushList.forEach(particle => {
+            this.p.square(...this.getDrawCoords(...particle),this.particleSize);
+        });
+    }
+
+    cursorPlace() {
+        this.brushList.forEach(particle => this.placeParticle(...particle));
     }
 
     pauseText() {
@@ -103,8 +153,7 @@ class Screen {
         this.p.text(string, x, y);
     }
 
-    placeParticle() {
-        let [x,y] = this.cursor;
+    placeParticle(x,y) {
         //Place particle based off of current cursor setting
         switch(this.cursorType) {
             case "sand":

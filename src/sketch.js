@@ -10,6 +10,7 @@ const sketch = (p) => {
 	let screen;
 
 	let mouseHeld = false;
+	let mouseNotMovedYet = true;
 
 	const particleSize = 8;
 	const framerate = 30;
@@ -34,14 +35,14 @@ const sketch = (p) => {
 		if (screen.framenum % 2 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
 
 		//If mouse is held, place a particle
-		if (mouseHeld) screen.placeParticle();
+		if (mouseHeld && !mouseNotMovedYet) screen.cursorPlace();
 
 		//Step simulation every cycle of game loop
 		screen.stepSim();
 		//If sim is paused, draw pause text
 		if (screen.paused) screen.pauseText();
 		//Place cursor at mouse position
-		screen.drawCursor(p.mouseX,p.mouseY);
+		if (!mouseNotMovedYet) screen.drawCursor(p.mouseX,p.mouseY);
 	};
 
 	//Event that runs if mouse is pressed
@@ -56,6 +57,16 @@ const sketch = (p) => {
 	p.keyPressed = () => {
 		//If space bar is pressed, toggle pause
 		if (p.keyCode == 32) screen.paused = !screen.paused;
+		//If arrow keys are pressed, raise or lower brush radius
+		if (p.keyCode == p.UP_ARROW) {
+			if (screen.brushRadius < 10) screen.brushRadius++;
+		}
+		if (p.keyCode == p.DOWN_ARROW) {
+			if (screen.brushRadius > 0) screen.brushRadius--;
+		}
+	}
+	p.mouseMoved = () => {
+		mouseNotMovedYet = false;
 	}
 };
 
