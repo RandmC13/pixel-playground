@@ -2,6 +2,7 @@
 -colour
 -type
 -static
+-state flag (solid, liquid, fire) having a flag should help with making particle interaction checking easier
 -mass
 -liquid
 -flammable????

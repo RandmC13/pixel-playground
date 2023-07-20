@@ -38,7 +38,8 @@ const sketch = (p) => {
 
 		//Step simulation every cycle of game loop
 		screen.stepSim();
-
+		//If sim is paused, draw pause text
+		if (screen.paused) screen.pauseText();
 		//Place cursor at mouse position
 		screen.drawCursor(p.mouseX,p.mouseY);
 	};
@@ -50,6 +51,11 @@ const sketch = (p) => {
 	//Event that runs if mouse is released
 	p.mouseReleased = () => {
 		mouseHeld = false;
+	}
+	//Even that runs if key is pressed
+	p.keyPressed = () => {
+		//If space bar is pressed, toggle pause
+		if (p.keyCode == 32) screen.paused = !screen.paused;
 	}
 };
 

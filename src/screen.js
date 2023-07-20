@@ -33,6 +33,7 @@ class Screen {
         this.grid = generateGrid(this.particleSize);
         this.gridWidth = this.grid.length;
         this.gridHeight = this.grid[0].length;
+        this.paused = false;
         this.framenum = 0;
         this.cursor = [0,0];
         this.cursorType = "sand";
@@ -57,10 +58,13 @@ class Screen {
                 this.p.square(...this.getDrawCoords(x,y),this.particleSize);
                 
                 //Step simulation
-                //If particle is static no need to update it
-                if (gridSnapshot[x][y].static) continue;
-                //If particle is not static, run simulation but store the changes in the main grid
-                gridSnapshot[x][y].update(x,y,this.grid);
+                //Only step sim if it is not paused
+                if (!this.paused) {
+                    //If particle is static no need to update it
+                    if (gridSnapshot[x][y].static) continue;
+                    //If particle is not static, run simulation but store the changes in the main grid
+                    gridSnapshot[x][y].update(x,y,this.grid);
+                }
             }
         }
         //Increment framenum
@@ -79,7 +83,7 @@ class Screen {
     }
 
     drawCursor(mouseX, mouseY) {
-        const alpha = 25;
+        const alpha = -25;
         //Set colour
         let colour = getColour(this.cursorType).map(n => n+alpha);
         this.p.fill(colour);
@@ -87,6 +91,16 @@ class Screen {
         let [x,y] = this.getGridCoords(mouseX, mouseY);
         this.cursor = [x,y];
         this.p.square(...this.getDrawCoords(x,y),this.particleSize);
+    }
+
+    pauseText() {
+        let padding = 5;
+        let string = "Paused";
+        let x = this.width - (this.p.textWidth(string) + (2 * padding));
+        let y = padding;
+        this.p.textAlign(this.p.LEFT,this.p.TOP);
+        this.p.fill(255);
+        this.p.text(string, x, y);
     }
 
     placeParticle() {
