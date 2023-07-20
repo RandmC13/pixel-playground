@@ -9,6 +9,7 @@ const sketch = (p) => {
 	let screen;
 
 	const particleSize = 8;
+	const framerate = 30;
 
 	//Function runs once on page load
 
@@ -18,7 +19,8 @@ const sketch = (p) => {
 		p.background(70);
 		//Define screen object
 		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, p);
-		
+		//Set frame rate
+		p.frameRate(framerate);
 		//generate random sand particles
 		for (var i=0;i<30;i++) {
 			let x = Math.floor(Math.random() * screen.gridWidth);
