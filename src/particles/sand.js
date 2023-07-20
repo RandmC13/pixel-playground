@@ -1,11 +1,10 @@
 import Air from "./air";
-import Particle from "./particle";
+import { Particle } from "../particle";
 
 class Sand extends Particle {
     constructor() {
-        const colour = [194,178,128];
         const type = "sand";
-        super(colour, type, false);
+        super(type, false);
     }
 
     update(x,y,grid) {

@@ -1,4 +1,6 @@
-import Air from "./air"
+import { getColour } from "./particle";
+import Air from "./particles/air"
+import Sand from "./particles/sand";
 
 class Screen {
     constructor(windowWidth, windowHeight, particleSize, sketchObj) {
@@ -32,6 +34,8 @@ class Screen {
         this.gridWidth = this.grid.length;
         this.gridHeight = this.grid[0].length;
         this.framenum = 0;
+        this.cursor = [0,0];
+        this.cursorType = "air";
     };
 
     stepSim() {
@@ -49,8 +53,8 @@ class Screen {
         for (var y=0;y<gridSnapshot[0].length;y++) {
             for (var x=0;x<gridSnapshot.length;x++) {
                 //Draw grid snapshot
-                this.p.fill(gridSnapshot[x][y].colour[0],gridSnapshot[x][y].colour[1],gridSnapshot[x][y].colour[2]);
-                this.p.square(x*this.particleSize,y*this.particleSize,this.particleSize);
+                this.p.fill(...gridSnapshot[x][y].colour);
+                this.p.square(...this.getDrawCoords(x,y),this.particleSize);
                 
                 //Step simulation
                 //If particle is static no need to update it
@@ -61,6 +65,40 @@ class Screen {
         }
         //Increment framenum
         this.framenum++;
+    };
+
+    getGridCoords(x, y) {
+        let gridX = Math.floor(x / this.particleSize);
+        let gridY = Math.floor(y / this.particleSize);
+
+        return [gridX,gridY];
+    }
+
+    getDrawCoords(x, y) {
+        return [x*this.particleSize, y*this.particleSize];
+    }
+
+    drawCursor(mouseX, mouseY) {
+        const alpha = 25;
+        //Set colour
+        let colour = getColour(this.cursorType).map(n => n+alpha);
+        this.p.fill(colour);
+        //Draw square at equivalent point based off mouse position and set internal cursor coords
+        let [x,y] = this.getGridCoords(mouseX, mouseY);
+        this.cursor = [x,y];
+        this.p.square(...this.getDrawCoords(x,y),this.particleSize);
+    }
+
+    placeParticle() {
+        //Place particle based off of current cursor setting
+        switch(this.cursorType) {
+            case "sand":
+                this.grid[this.cursor[0]][this.cursor[1]] = new Sand();
+                break;
+            case "air":
+                this.grid[this.cursor[0]][this.cursor[1]] = new Air();
+                break;
+        }
     }
 };
 
