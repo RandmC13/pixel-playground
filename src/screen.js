@@ -34,38 +34,31 @@ class Screen {
         this.framenum = 0;
     };
 
-    updateGrid(updates) {
-        for (var i=0;i<updates.length;i++) {
-            //Loop through changes and update the grid accordingly
-            this.grid[updates[i][0]][updates[i][1]] = updates[i][2];
-        }
-    }
-
     stepSim() {
-        let gridUpdates = [];
-        /*These 2 loops could be combined for more efficiency but can sometimes make the game look choppy because more intensive
-            update processes result in gaps between parts of the frame being drawn. By separating the loops, the frame is drawn uniformly.*/
-        for (var y=0;y<this.grid[0].length;y++) {
-            for (var x=0;x<this.grid.length;x++) {
-                //Draw grid
-                this.p.fill(this.grid[x][y].colour[0],this.grid[x][y].colour[1],this.grid[x][y].colour[2]);
+        /*
+        A snapshot of the grid is made by cloning the array. This allows the draw cycle and simulation cycle to be in the same for loop.
+        By using a snapshot, the simulation can be propogated throughout the grid without affecting what is drawn on the screen.
+
+        The snapshot is what is drawn every frame but the changes made by running the simulation are made to the main grid. This also solves the problem
+        of having delete themselves if two are competing for the same square as simulations are propogated continuously rather than in a lump-sum method.
+        */
+
+        //Take a snapshot of the grid
+        let gridSnapshot = [...this.grid].map(row => [...row]);
+
+        for (var y=0;y<gridSnapshot[0].length;y++) {
+            for (var x=0;x<gridSnapshot.length;x++) {
+                //Draw grid snapshot
+                this.p.fill(gridSnapshot[x][y].colour[0],gridSnapshot[x][y].colour[1],gridSnapshot[x][y].colour[2]);
                 this.p.square(x*this.particleSize,y*this.particleSize,this.particleSize);
-            }
-        }
-        for (var y=0;y<this.grid[0].length;y++) {
-            for (var x=0;x<this.grid.length;x++) {
+                
                 //Step simulation
-                //If particle is static no need to update
-                if (this.grid[x][y].static) continue;
-                //If particle is not static, update and store its changes
-                let update = this.grid[x][y].update(x,y,this.grid);
-                //If particle hasn't changed then do nothing
-                if (!update) continue;
-                for (var i=0;i<update.length;i++) gridUpdates.push(update[i]);
+                //If particle is static no need to update it
+                if (gridSnapshot[x][y].static) continue;
+                //If particle is not static, run simulation but store the changes in the main grid
+                gridSnapshot[x][y].update(x,y,this.grid);
             }
         }
-        //Enact updates
-        this.updateGrid(gridUpdates);
         //Increment framenum
         this.framenum++;
     }
