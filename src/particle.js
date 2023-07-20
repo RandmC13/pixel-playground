@@ -14,12 +14,10 @@ class Particle {
         this.colour = colour;
         this.type = type;
         this.static = stationary;
-        this.updateToggle = true; //toggles every frame to prevent bugs
     }
 
     update() {
-        //when particle updates flip updateToggle
-        this.updateToggle = !this.updateToggle;
+        return false;
     }
 }
 

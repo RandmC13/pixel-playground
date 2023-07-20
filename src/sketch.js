@@ -19,14 +19,12 @@ const sketch = (p) => {
 		//Define screen object
 		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, p);
 		
-		// generate random sand particles
+		//generate random sand particles
 		for (var i=0;i<30;i++) {
 			let x = Math.floor(Math.random() * screen.gridWidth);
 			let y = Math.floor(Math.random() * screen.gridHeight);
 			screen.grid[x][y] = new Sand();
 		}
-
-		screen.grid[30][5] = new Sand();
 
 		p.createCanvas(screen.width, screen.height);
 
@@ -35,9 +33,9 @@ const sketch = (p) => {
 	//Game loop
 
 	p.draw = () => {
-		//Draw particles on screen
-		if (screen.framenum % 2 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
+		//Step simulation every cycle of game loop
 		screen.stepSim();
+		if (screen.framenum % 2 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
 	};
 };
 

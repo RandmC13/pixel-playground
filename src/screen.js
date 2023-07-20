@@ -35,27 +35,28 @@ class Screen {
     };
 
     stepSim() {
-        /*These 2 loops could be combined for more efficiency but can sometimes make the game look choppy because more intensive
-            update processes result in gaps between parts of the frame being drawn. By separating the loops, the frame is drawn uniformly.*/
-        for (var y=0;y<this.grid[0].length;y++) {
-            for (var x=0;x<this.grid.length;x++) {
-                //Step simulation
-                //If particle is static no need to update
+        /*
+        A snapshot of the grid is made by cloning the array. This allows the draw cycle and simulation cycle to be in the same for loop.
+        By using a snapshot, the simulation can be propogated throughout the grid without affecting what is drawn on the screen.
 
-                let skipParticle = false;
+        The snapshot is what is drawn every frame but the changes made by running the simulation are made to the main grid. This also solves the problem
+        of having delete themselves if two are competing for the same square as simulations are propogated continuously rather than in a lump-sum method.
+        */
 
-                if (this.grid[x][y].static) skipParticle = true;
-                //If particle has already been updated, don't update again (flip toggle back)
-                if (!this.grid[x][y].updateToggle) {
-                    skipParticle = true;
-                    this.grid[x][y].updateToggle = !this.grid[x][y].updateToggle;
-                }
-                //If particle is not static, update and store its changes also flip its frame num
-                if (!skipParticle) this.grid[x][y].update(x,y,this.grid);
+        //Take a snapshot of the grid
+        let gridSnapshot = [...this.grid].map(row => [...row]);
 
-                //Draw grid
-                this.p.fill(this.grid[x][y].colour[0],this.grid[x][y].colour[1],this.grid[x][y].colour[2]);
+        for (var y=0;y<gridSnapshot[0].length;y++) {
+            for (var x=0;x<gridSnapshot.length;x++) {
+                //Draw grid snapshot
+                this.p.fill(gridSnapshot[x][y].colour[0],gridSnapshot[x][y].colour[1],gridSnapshot[x][y].colour[2]);
                 this.p.square(x*this.particleSize,y*this.particleSize,this.particleSize);
+                
+                //Step simulation
+                //If particle is static no need to update it
+                if (gridSnapshot[x][y].static) continue;
+                //If particle is not static, run simulation but store the changes in the main grid
+                gridSnapshot[x][y].update(x,y,this.grid);
             }
         }
         //Increment framenum

@@ -9,9 +9,6 @@ class Sand extends Particle {
     }
 
     update(x,y,grid) {
-        //First run default particle operations
-        super.update();
-
         const goDown = () => {
             grid[x][y+1] = grid[x][y];
             grid[x][y] = new Air();
