@@ -35,7 +35,7 @@ class Screen {
         this.gridHeight = this.grid[0].length;
         this.framenum = 0;
         this.cursor = [0,0];
-        this.cursorType = "air";
+        this.cursorType = "sand";
     };
 
     stepSim() {
@@ -90,13 +90,14 @@ class Screen {
     }
 
     placeParticle() {
+        let [x,y] = this.cursor;
         //Place particle based off of current cursor setting
         switch(this.cursorType) {
             case "sand":
-                this.grid[this.cursor[0]][this.cursor[1]] = new Sand();
+                this.grid[x][y] = new Sand();
                 break;
             case "air":
-                this.grid[this.cursor[0]][this.cursor[1]] = new Air();
+                this.grid[x][y] = new Air();
                 break;
         }
     }
