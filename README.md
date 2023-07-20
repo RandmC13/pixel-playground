@@ -1,4 +1,4 @@
-# Particle Playground
+# Pixel Playground
 Also known as - *Noita Good Pixel Simulator*
 
 *Particle Playground* is a "falling sand" type game that uses principles of cellular automata to simulate various particle interactions on a grid.
