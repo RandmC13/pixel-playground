@@ -54,10 +54,8 @@ class Chunk {
         p.scale(particleSize);
         p.translate(this.particleX, this.particleY);
         this.particles.forEach((particle, index) => {
-            if (particle.type != "air") {
-                p.fill(...particle.colour);
-                p.square(...indexToCoordPair(index, this.chunkSize), 1);
-            }
+            p.fill(...particle.colour);
+            p.square(...indexToCoordPair(index, this.chunkSize), 1);
         });
         p.pop();
     }
@@ -236,15 +234,15 @@ class ChunkManager {
 
     drawAllChunks(p, particleSize) {
         for (const chunk of this.chunks) {
-            chunk.debug(p);
             chunk.draw(p, particleSize);
         }
     }
 
     draw(p, particleSize) {
         for (const chunk of this.updatedChunks) {
-            chunk.debug(p);
             chunk.draw(p, particleSize);
+            // TODO: move this to the debug canvas
+            chunk.debug(p);
         }
         
         // Should be faster than instantiating a new Set due to GC and Heap alloc times
