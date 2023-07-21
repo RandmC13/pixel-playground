@@ -10,18 +10,18 @@ const sketch = (p) => {
 	let screen, debug;
 
 	const particleSize = 8;
-	const targetFramerate = 60;
+	const framerate = 30;
 
 	//Function runs once on page load
 
 	p.setup = () => {
 		//Set no stroke
 		p.noStroke();
-		p.frameRate(targetFramerate);
-
+		p.background(70);
 		//Define screen object
 		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, p);
-		
+		//Set frame rate
+		p.frameRate(framerate);
 		//generate random sand particles
 		for (var i=0;i<30;i++) {
 			let x = Math.floor(Math.random() * screen.gridWidth);
@@ -37,12 +37,10 @@ const sketch = (p) => {
 
 	//Game loop
 	p.draw = () => {
-		//Draw particles on screen
-		screen.stepSim()
-		//Every 2 frames, add sand in the middle of the screen
-		if (screen.framenum % 2 == 0) {
-			screen.grid[Math.floor(screen.gridWidth / 2)][5] = new Sand();
-		}
+		//Step simulation every cycle of game loop
+		screen.stepSim();
+		if (screen.framenum % 2 == 0)
+			screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
 	};
 };
 

@@ -76,16 +76,9 @@ class Screen {
         for (var y=0;y<this.grid[0].length;y++) {
             for (var x=0;x<this.grid.length;x++) {
                 //Step simulation
-                //If particle is static no need to update
-                if (this.grid[x][y].static) continue;
-                //If particle is not static, update and store its changes
-                let update = this.grid[x][y].update(x,y,this.grid);
-                //If particle hasn't changed then do nothing
-                if (!update) continue;
-                for (var i=0;i<update.length;i++) gridUpdates.push(update[i]);
+                //If particle is static no need to update it
             }
         }
-        
         //Increment framenum
         this.framenum++;
     }
