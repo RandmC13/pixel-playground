@@ -127,8 +127,10 @@ class Screen {
         let colour = getColour(this.cursorType).map(n => n+alpha);
         this.p.fill(colour);
 
-        let [x,y] = this.getGridCoords(mouseX, mouseY);
-        this.cursor = [x,y];
+        let cursor = this.getGridCoords(mouseX, mouseY);
+        if (cursor) this.cursor = cursor;
+
+        let [x,y] = this.cursor;
 
         let [centerX,centerY] = this.getDrawCoords(x,y).map(n => n+(0.5*this.particleSize));
         this.particlesInRadius(centerX,centerY,this.brushRadius);
