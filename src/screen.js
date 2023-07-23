@@ -8,6 +8,7 @@ class Screen {
             let pixelsPerChunk = (particleSize * chunkSize)
             let widthInChunks = Math.floor(windowWidth / pixelsPerChunk);
             let heightInChunks = Math.floor(windowHeight / pixelsPerChunk);
+            //return [ 256, 256, 32, 32, 4, 4 ];
             return [
                 widthInChunks * pixelsPerChunk,     // screen width px
                 heightInChunks * pixelsPerChunk,    // screen height px
@@ -22,7 +23,7 @@ class Screen {
             this.pixelWidth, this.pixelHeight,
             this.particleWidth, this.particleHeight,
             this.chunkWidth, this.chunkHeight
-        ] = calculateDimensions(windowWidth,windowHeight,particleSize);;
+        ] = calculateDimensions(windowWidth,windowHeight,particleSize);
 
         this.p = sketchObj;
         this.framenum = 0;
@@ -39,7 +40,8 @@ class Screen {
 
     stepSim() {
         this.chunks.process();
-        this.chunks.draw(this.p, this.particleSize)
+        this.chunks.draw(this.p, this.particleSize);
+        // this.chunks.drawAllChunks(this.p, this.particleSize);
         //Increment framenum
         this.framenum++;
     }

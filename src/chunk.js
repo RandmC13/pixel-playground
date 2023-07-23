@@ -1,3 +1,5 @@
+"use strict";
+
 import Air from "./air";
 import { coordPairToIndex, indexToCoordPair } from "./lib/coords"
 
@@ -13,15 +15,6 @@ class ChunkNeighbourEnum {
 }
 
 class Chunk {
-    /*
-        if this.active:
-            process() -> processes all particles and pushes any updates this.updates, marks the chunk as active
-            dispatchUpdates() -> enacts all updates on the this.particles array, marks the chunk as updated
-
-        if this.hasUpdated:
-            draw() -> draws the chunk to the canvas
-    */
-
     constructor(x, y, chunkSize, manager) {
         this.x = x;
         this.y = y;
@@ -32,9 +25,7 @@ class Chunk {
         this.totalParticles = chunkSize * chunkSize;
         this.active = false;
         this.particles = Array(this.totalParticles).fill(new Air())
-        this.updates = new Set();
-        this.hasUpdated = false;
-        this.neighbours = Array(8).fill(null);
+        this.neighbours = Array(9).fill(null);
     }
 
     markActive() {
@@ -69,48 +60,109 @@ class Chunk {
     }
 
     process() {
-        for (const particle of this.particles) {
-            try {
-                if (particle.static) continue;
-            } catch {
-                console.log(this);
+        let updateCount = 0;
+        const particlesCopy = [...this.particles];
+        particlesCopy.forEach((particle, index) => {
+            // static particles have no updates
+            if (particle.static) return;
+
+            // get list of updates from particle
+            const updates = particle.update(...indexToCoordPair(index, this.chunkSize), this);
+
+            updateCount += updates.length;
+
+            for (const update of updates) {
+                const [x, y, updatedParticle] = update;
+
+                // index is within current chunk
+                if (0 <= x && x < this.chunkSize && 0 <= y && y < this.chunkSize) {
+                    this.setRelative(x, y, updatedParticle);
+                    continue;
+                }
+
+                const chunk = this.getChunkForRelative(x, y);
+                if (chunk === null) return;
+                
+                // generate coords relative to other chunk
+                const relativeX = (x + this.particleX) - chunk.particleX;
+                const relativeY = (y + this.particleY) - chunk.particleY;
+
+                chunk.setRelative(relativeX, relativeY, updatedParticle);
             }
-            const update = particle.update();
-            if (update === null)
-                continue;
-    
-            this.updates.push(update);
-        }
+        });
+
+        if (updateCount === 0)
+            this.markInactive();
+        else
+            this.markUpdated();
     }
 
-    dispatchUpdates() {
-        // If any updates are dispatched, mark the chunk as active and updated
-        // Else, mark the chunk as inactive
-        if (this.updates.size === 0) {
-            this.markInactive();
-            return;
-        }
+    getChunkForRelative(x, y) {
+        /*
+            This function takes a pair of relative coordinates (ie (0,0) is the top left corner of the chunk)
+            and returns the chunk corresponding to the coordinates. If the coordinate falls within a neighbouring
+            chunk, the neighbouring chunk will be returned from this.neighbours. If the chunk is further afield,
+            this.manager.getChunkFor() will be called with the absolute coordinates to resolve the chunk. This case
+            shouldn't happen in the current state of PixelPlayground as no particles currently have the ability to
+            affect particles more than 1 chunk away, but the implementation may be useful in the future.
+        */
 
-        for (const update of this.updates) {
-            const [index, particle] = update;
-            this.particles[index] = particle;
+        // Work out what column the chunk is in
+        let col = 0;
+        if (-this.chunkSize <= x && x < 0)
+            col = 0;    // left
+        else if (0 <= x && x < this.chunkSize)
+            col = 1;    // centre
+        else if (this.chunkSize <= x < (this.chunkSize * 2))
+            col = 2;    // right
+        else
+            return this.manager.getChunkFor(x + this.particleX, y + this.particleY);
 
-            this.markUpdated();
+        // Work out what row the chunk is in
+        let row = 0;
+        if (-this.chunkSize <= y && y < 0)
+            row = 0;    // top
+        else if (0 <= y && y < this.chunkSize)
+            row = 3;    // middle
+        else if (this.chunkSize <= x < (this.chunkSize * 2))
+            row = 6;    // bottom
+        else
+            return this.manager.getChunkFor(x + this.particleX, y + this.particleY);
 
-            // Handle special cases that may cause other chunks to be updated
-            this.activateChunksNeighbouringParticle(index);
-        }
+        
+        const index = row + col;
+        if (index === 4)
+            // 4 => column = 1 (centre) + row = 3 (middle) => the current chunk
+            return this;
 
-        this.updates.clear();
+        return this.neighbours[index]; 
+    }
+
+    setIndex(index, particle) {
+        this.particles[index] = particle;
+        this.markActive();
+        this.activateChunksNeighbouringParticle(index);
+    }
+
+    getRelative(x, y) {
+        if (0 <= x && x < this.chunkSize && 0 <= y && y < this.chunkSize)
+            return this.particles[coordPairToIndex(x, y, this.chunkSize)];
+        
+        const chunk = this.getChunkForRelative(x, y);
+        if (chunk === null) return null;
+        // generate coords relative to other chunk
+        const relativeX = (x + this.particleX) - chunk.particleX;
+        const relativeY = (y + this.particleY) - chunk.particleY;
+
+        return chunk.getRelative(relativeX, relativeY);
     }
 
     setRelative(x, y, particle) {
-        this.updates.add([coordPairToIndex(x, y, this.chunkSize), particle]);
-        this.markActive();
+        this.setIndex(coordPairToIndex(x, y, this.chunkSize), particle);
     }
 
     setAbsolute(x, y, particle) {
-        this.setRelative(x - this.particleX, y - this.particleY, particle);
+        this.setIndex(coordPairToIndex(x - this.particleX, y - this.particleY, this.chunkSize), particle);
     }
 
     registerNeighbour(neighbourIndex, chunk) {
@@ -131,14 +183,14 @@ class Chunk {
             this.neighbours[ChunkNeighbourEnum.MIDDLE_LEFT]?.markActive();
             x_corner = 0;
         } else if (x === this.chunkSize - 1) {
-            this.neighbours[ChunkNeighbourEnum.MIDDLE_LEFT]?.markActive();
+            this.neighbours[ChunkNeighbourEnum.MIDDLE_RIGHT]?.markActive();
             x_corner = 2;
         }
         if (y === 0) {
             this.neighbours[ChunkNeighbourEnum.TOP_CENTRE]?.markActive();
             y_corner = 0;
         } else if (y === this.chunkSize - 1) {
-            this.neighbours[ChunkNeighbourEnum.MIDDLE_LEFT]?.markActive();
+            this.neighbours[ChunkNeighbourEnum.BOTTOM_CENTRE]?.markActive();
             y_corner = 6;
         }
 
@@ -184,7 +236,8 @@ class ChunkManager {
                 delete mapping[ChunkNeighbourEnum.TOP_LEFT];
                 delete mapping[ChunkNeighbourEnum.MIDDLE_LEFT];
                 delete mapping[ChunkNeighbourEnum.BOTTOM_LEFT];
-            } else if (x === cols - 1) {
+            }
+            if (x === cols - 1) {
                 delete mapping[ChunkNeighbourEnum.TOP_RIGHT];
                 delete mapping[ChunkNeighbourEnum.MIDDLE_RIGHT];
                 delete mapping[ChunkNeighbourEnum.BOTTOM_RIGHT];
@@ -194,7 +247,8 @@ class ChunkManager {
                 delete mapping[ChunkNeighbourEnum.TOP_LEFT];
                 delete mapping[ChunkNeighbourEnum.TOP_CENTRE];
                 delete mapping[ChunkNeighbourEnum.TOP_RIGHT];
-            } else if (y === cols - 1) {
+            }
+            if (y === rows - 1) {
                 delete mapping[ChunkNeighbourEnum.BOTTOM_LEFT];
                 delete mapping[ChunkNeighbourEnum.BOTTOM_CENTRE];
                 delete mapping[ChunkNeighbourEnum.BOTTOM_RIGHT];
@@ -235,6 +289,8 @@ class ChunkManager {
     drawAllChunks(p, particleSize) {
         for (const chunk of this.chunks) {
             chunk.draw(p, particleSize);
+            if (this.updatedChunks.has(chunk))
+                chunk.debug(p);
         }
     }
 
@@ -242,7 +298,7 @@ class ChunkManager {
         for (const chunk of this.updatedChunks) {
             chunk.draw(p, particleSize);
             // TODO: move this to the debug canvas
-            chunk.debug(p);
+            // chunk.debug(p);
         }
         
         // Should be faster than instantiating a new Set due to GC and Heap alloc times
@@ -251,10 +307,11 @@ class ChunkManager {
     }
 
     process() {
-        for (const chunk of this.activeChunks) {
+        // Clone the active chunks set to avoid modifying it
+        // while we are iterating over it - JS doesn't agree with that
+        const activeChunks = new Set(this.activeChunks);
+        for (const chunk of activeChunks)
             chunk.process();
-            chunk.dispatchUpdates();
-        }
     }
 }
 

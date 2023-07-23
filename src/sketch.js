@@ -11,7 +11,7 @@ const sketch = (p) => {
 
 	const particleSize = 8;
 	const chunkSize = 8;
-	const framerate = 30;
+	const framerate = 60;
 
 	//Function runs once on page load
 
@@ -32,7 +32,7 @@ const sketch = (p) => {
 
 		p.createCanvas(screen.pixelWidth, screen.pixelHeight);
 
-		debug = new Debug(false, screen, p);
+		debug = new Debug(true, screen, p);
 		screen.drawAll();
 	};
 
@@ -41,7 +41,7 @@ const sketch = (p) => {
 		//Step simulation every cycle of game loop
 		screen.stepSim();
 		if (screen.framenum % 2 == 0)
-			screen.set(screen.particleWidth / 2, 15, new Sand());
+			screen.set(screen.particleWidth / 2, 2, new Sand());
 	};
 };
 

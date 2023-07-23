@@ -1,5 +1,8 @@
+"use strict";
+
 import Air from "./air";
 import Particle from "./particle";
+import ParticleUpdate from "./lib/update";
 
 class Sand extends Particle {
     constructor() {
@@ -8,67 +11,56 @@ class Sand extends Particle {
         super(colour, type, false);
     }
 
-    update(x,y,grid) {
-        return null;
-        const goDown = () => {
-            grid[x][y+1] = grid[x][y];
-            grid[x][y] = new Air();
-        };
-
-        const goLeft = () => {
-            grid[x-1][y+1] = grid[x][y];
-            grid[x][y] = new Air();
-        };
-
-        const goRight = () => {
-            grid[x+1][y+1] = grid[x][y];
-            grid[x][y] = new Air();
-        };
-
+    update(x,y,chunk) {
+        const update = new ParticleUpdate(this, x, y);
         //Check if sand is on the ground
-        if (y+1 >= grid[0].length) {
+        const particleBelow = chunk.getRelative(x, y + 1);
+        if (particleBelow === null) {
             this.static = true;
-            return false;
+            return [];
         }
 
         //Check if sand can fall down
-        if (grid[x][y+1].type == "air") {
-            goDown();
-            return true;
+        if (particleBelow.type == "air") {
+            return update
+                .replaceWith(new Air())
+                .moveDown(1)
+                .done();
         }
 
         //If sand can't fall down check if it can fall left or right
         let left = false;
         let right = false;
 
-        if (x-1 >= 0) {
-            if (grid[x-1][y+1].type == "air") left = true;
-        };
-        if (x+1 < grid.length) {
-            if (grid[x+1][y+1].type == "air") right = true;
-        };
+        const particleLeft = chunk.getRelative(x - 1, y + 1);
+        if (particleLeft !== null && particleLeft.type === "air")
+            left = true;
+        
+        const particleRight = chunk.getRelative(x + 1, y + 1);
+        if (particleRight !== null && particleRight.type === "air")
+            right = true;
 
         //If sand can fall either way, choose a random direction
         if (left && right) {
-            if (Math.random() < 0.5) {
-                goLeft();
-                return true;
-            }
-
-            goRight();
-            return true;
+            return update
+                .replaceWith(new Air())
+                .move(Math.random() > 0.5 ? -1 : 1, 1)
+                .done();
         }
 
         //If sand can only go one way, choose that way
-        if (left) {
-            goLeft();
-            return true;
-        } else if (right) {
-            goRight();
-            return true;
-        }
+        if (left)
+            return update
+                .replaceWith(new Air())
+                .move(-1, 1)
+                .done();
+        else if (right)
+            return update
+                .replaceWith(new Air())
+                .move(1, 1)
+                .done();
 
-        return false;
+        return [];
     }
 }
 

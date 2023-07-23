@@ -3,5 +3,5 @@ export function coordPairToIndex(x, y, width) {
 }
 
 export function indexToCoordPair(index, width) {
-    return [~~(index / width), (index % width)];
+    return [(index % width), ~~(index / width)];
 }
