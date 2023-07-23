@@ -1,6 +1,6 @@
 "use strict";
 
-import Air from "./air";
+import Air from "./particles/air";
 import { coordPairToIndex, indexToCoordPair } from "./lib/coords"
 
 class ChunkNeighbourEnum {

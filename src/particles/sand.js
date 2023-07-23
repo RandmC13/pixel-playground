@@ -1,14 +1,13 @@
 "use strict";
 
 import Air from "./air";
-import Particle from "./particle";
-import ParticleUpdate from "./lib/update";
+import { Particle } from "../particle";
+import ParticleUpdate from "../lib/update";
 
 class Sand extends Particle {
     constructor() {
-        const colour = [194,178,128];
         const type = "sand";
-        super(colour, type, false);
+        super(type, false);
     }
 
     update(x,y,chunk) {
