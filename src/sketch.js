@@ -46,8 +46,8 @@ const sketch = (p) => {
 		//Step simulation every cycle of game loop
 		if (!screen.paused) {
 			screen.stepSim();
-			//if (screen.framenum % 2 == 0)
-			//	screen.set(screen.particleWidth / 2, 2, new Sand());
+			if (screen.framenum % 2 == 0)
+				screen.set(screen.particleWidth / 2, 2, new Sand());
 		} else {
 			//If sim is paused, draw pause text
 			screen.pauseText();
@@ -98,6 +98,12 @@ const sketch = (p) => {
 				framerate += Math.min(5, framerate * 2);
 				p.frameRate(framerate);
 				break;
+		}
+		//If s key is pressed whilst paused, un pause the simulation, step it and then pause again
+		if (p.keyCode == 83 && screen.paused) {
+			screen.paused = false;
+			screen.stepSim();
+			screen.paused = true;
 		}
 
 		// prevent default behaviour

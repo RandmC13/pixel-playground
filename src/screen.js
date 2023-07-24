@@ -55,8 +55,9 @@ class Screen {
         this.chunks.process();
         this.draw();
         // this.chunks.drawAllChunks(this.p, this.particleSize);
-        //Increment framenum
-        this.framenum++;
+
+        //Increment framenum if sim is unpaused
+        if (!this.paused) this.framenum++;
     };
 
     getGridCoords(x, y) {
@@ -74,13 +75,18 @@ class Screen {
     }
 
     particlesInRadius(x, y, r) {
+        //If radius is 0, just draw a point
+        if (r == 0) {
+            this.brushList = [this.getGridCoords(x,y)];
+            return true;
+        }
         let absR = (r + 0.5) * this.particleSize;
         let particles = [];
         let minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
 
         for (var theta=0;theta<2*Math.PI;theta+=0.05) {
             //Loop through radi
-            for (var radius=0;radius<absR;radius+=minR) {
+            for (var radius=0;radius<absR+(0.5*this.particleSize);radius+=minR) {
                 let pointX = x + (radius * Math.sin(theta));
                 let pointY = y + (radius * Math.cos(theta));
                 let point = this.getGridCoords(pointX,pointY);
@@ -92,7 +98,7 @@ class Screen {
                 //Get distance of point from center
                 let distance = Math.sqrt((particleX**2) + (particleY**2));
                 //If the circle can draw a line further than the center of the particle, draw it
-                if (absR >= distance-(0.45*this.particleSize)) {
+                if (absR >= distance) {
                     //Don't include particles that go off the screen
                     if (!particles.includes(point) && point) {
                         particles.push(point);
@@ -102,6 +108,7 @@ class Screen {
         }
 
         this.brushList = particles;
+        return true;
     }
 
     drawCursor(mouseX, mouseY) {
