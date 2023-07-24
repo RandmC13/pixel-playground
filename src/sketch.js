@@ -64,6 +64,12 @@ const sketch = (p) => {
 		if (p.keyCode == p.DOWN_ARROW) {
 			if (screen.brushRadius > 0) screen.brushRadius--;
 		}
+		//If s key is pressed whilst paused, un pause the simulation, step it and then pause again
+		if (p.keyCode == 83 && screen.paused) {
+			screen.paused = false;
+			screen.stepSim();
+			screen.paused = true;
+		}
 	}
 	p.mouseMoved = () => {
 		mouseNotMovedYet = false;

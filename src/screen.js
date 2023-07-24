@@ -69,8 +69,8 @@ class Screen {
                 }
             }
         }
-        //Increment framenum
-        this.framenum++;
+        //Increment framenum if sim is unpaused
+        if (!this.paused) this.framenum++;
     };
 
     getGridCoords(x, y) {
