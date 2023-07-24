@@ -13,10 +13,16 @@
 
 const particles = {
     "sand": {
-        colour: [194,178,128]
+        colour: [194,178,128],
+        density: 5
     },
     "air": {
-        colour: [70,70,70]
+        colour: [70,70,70],
+        density: 0
+    },
+    "water": {
+        colour: [0,105,148],
+        density: 1
     }
 };
 
@@ -29,10 +35,12 @@ const getParticleList = () => {
 }
 
 class Particle {
-    constructor(type, stationary) {
-        this.colour = getColour(type);
+    constructor(type, stationary, liquid=false) {
         this.type = type;
+        this.colour = particles[this.type]["colour"];
+        this.density = particles[this.type]["density"];
         this.static = stationary;
+        this.liquid = liquid;
     }
 
     update() {

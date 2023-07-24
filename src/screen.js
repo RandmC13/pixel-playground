@@ -1,6 +1,8 @@
+import { WatchIgnorePlugin } from "webpack";
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
 import Sand from "./particles/sand";
+import Water from "./particles/water";
 
 class Screen {
     constructor(windowWidth, windowHeight, particleSize, sketchObj) {
@@ -184,6 +186,9 @@ class Screen {
                 break;
             case "air":
                 this.grid[x][y] = new Air();
+                break;
+            case "water":
+                this.grid[x][y] = new Water();
                 break;
         }
     }

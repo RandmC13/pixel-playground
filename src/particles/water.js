@@ -1,10 +1,9 @@
-import Air from "./air";
 import { Particle } from "../particle";
 
-class Sand extends Particle {
+class Water extends Particle {
     constructor() {
-        const type = "sand";
-        super(type, false);
+        const type = "water";
+        super(type, false, liquid=true);
     }
 
     update(x,y,grid) {
@@ -14,39 +13,34 @@ class Sand extends Particle {
         };
 
         const goLeft = () => {
-            grid[x-1][y+1] = grid[x][y];
+            grid[x-1][y] = grid[x][y];
             grid[x][y] = new Air();
         };
 
         const goRight = () => {
-            grid[x+1][y+1] = grid[x][y];
+            grid[x+1][y] = grid[x][y];
             grid[x][y] = new Air();
         };
 
-        //Check if sand is on the ground
+        //If water can go down, do it
         if (y+1 > grid[0].length-1) {
-            this.static = true;
-            return false;
+            if (grid[x][y+1].type == "air") {
+                goDown();
+                return true;
+            } 
         }
-
-        //Check if sand can fall down
-        if (grid[x][y+1].type == "air") {
-            goDown();
-            return true;
-        }
-
-        //If sand can't fall down check if it can fall left or right
+        //Check if water can go left or right
         let left = false;
         let right = false;
 
         if (x-1 >= 0) {
-            if (grid[x-1][y+1].type == "air") left = true;
+            if (grid[x-1][y].type == "air") left = true;
         };
         if (x+1 < grid.length) {
-            if (grid[x+1][y+1].type == "air") right = true;
+            if (grid[x+1][y].type == "air") right = true;
         };
 
-        //If sand can fall either way, choose a random direction
+        //If water can go either way, choose a random direction
         if (left && right) {
             if (Math.random() < 0.5) {
                 goLeft();
@@ -57,7 +51,7 @@ class Sand extends Particle {
             return true;
         }
 
-        //If sand can only go one way, choose that way
+        //If water can only go one way, choose that way
         if (left) {
             goLeft();
             return true;
@@ -70,4 +64,4 @@ class Sand extends Particle {
     }
 }
 
-export default Sand;
+export default Water;
