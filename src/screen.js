@@ -46,10 +46,14 @@ class Screen {
     drawAll() {
         this.chunks.drawAllChunks(this.p, this.particleSize);
     }
+    
+    draw() {
+        this.chunks.draw(this.p, this.particleSize);
+    }
 
     stepSim() {
         this.chunks.process();
-        this.chunks.draw(this.p, this.particleSize);
+        this.draw();
         // this.chunks.drawAllChunks(this.p, this.particleSize);
         //Increment framenum
         this.framenum++;
@@ -75,9 +79,6 @@ class Screen {
         let minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
 
         for (var theta=0;theta<2*Math.PI;theta+=0.05) {
-            let circleX = x + (absR * Math.sin(theta));
-            let circleY = y + (absR * Math.cos(theta));
-
             //Loop through radi
             for (var radius=0;radius<absR;radius+=minR) {
                 let pointX = x + (radius * Math.sin(theta));
@@ -122,11 +123,21 @@ class Screen {
             this.p.square(...this.getDrawCoords(...particle),this.particleSize);
         });
 
-        this.chunks.getChunkFor(x, y).markUpdated();
+        this.chunks.getChunkFor(x, y)?.markUpdated();
+        let chunkRadius = Math.ceil(this.brushRadius / this.chunkSize) + 1;
+        for (let chunkX = 0; chunkX < chunkRadius; chunkX++) {
+            for (let chunkY = 0; chunkY < chunkRadius; chunkY++) {
+                this.chunks.getChunkFor(x - chunkX * this.chunkSize, y - chunkY * this.chunkSize)?.markUpdated();
+                this.chunks.getChunkFor(x + chunkX * this.chunkSize, y - chunkY * this.chunkSize)?.markUpdated();
+                this.chunks.getChunkFor(x - chunkX * this.chunkSize, y + chunkY * this.chunkSize)?.markUpdated();
+                this.chunks.getChunkFor(x + chunkX * this.chunkSize, y + chunkY * this.chunkSize)?.markUpdated();
+            }
+        }
+        
     }
 
     cursorPlace() {
-        //this.brushList.forEach(particle => this.placeParticle(...particle));
+        this.brushList.forEach(particle => this.placeParticle(...particle));
     }
 
     pauseText() {
@@ -143,10 +154,10 @@ class Screen {
         //Place particle based off of current cursor setting
         switch(this.cursorType) {
             case "sand":
-                this.grid[x][y] = new Sand();
+                this.set(x, y, new Sand());
                 break;
             case "air":
-                this.grid[x][y] = new Air();
+                this.set(x, y, new Air());
                 break;
         }
     }

@@ -13,9 +13,9 @@ const sketch = (p) => {
 	let mouseHeld = false;
 	let mouseNotMovedYet = true;
 
-	const particleSize = 8;
+	const particleSize = 4;
 	const chunkSize = 8;
-	const framerate = 60;
+	let framerate = 60;
 
 	//Function runs once on page load
 	p.setup = () => {
@@ -29,7 +29,7 @@ const sketch = (p) => {
 		p.frameRate(framerate);
 		p.createCanvas(screen.pixelWidth, screen.pixelHeight);
 
-		debug = new Debug(true, screen, p);
+		debug = new Debug(false, screen, p);
 		screen.drawAll();
 	};
 
@@ -39,11 +39,15 @@ const sketch = (p) => {
 		if (mouseHeld && !mouseNotMovedYet) screen.cursorPlace();
 
 		//Step simulation every cycle of game loop
-		screen.stepSim();
-		if (screen.framenum % 2 == 0)
-			screen.set(screen.particleWidth / 2, 2, new Sand());
-		//If sim is paused, draw pause text
-		if (screen.paused) screen.pauseText();
+		if (!screen.paused) {
+			screen.stepSim();
+			if (screen.framenum % 2 == 0)
+				screen.set(screen.particleWidth / 2, 2, new Sand());
+		} else {
+			//If sim is paused, draw pause text
+			screen.pauseText();
+			screen.draw();
+		}
 		//Place cursor at mouse position
 		if (!mouseNotMovedYet) screen.drawCursor(p.mouseX,p.mouseY);
 	};
@@ -59,15 +63,31 @@ const sketch = (p) => {
 	//Even that runs if key is pressed
 	p.keyPressed = () => {
 		//If space bar is pressed, toggle pause
-		if (p.keyCode == 32) screen.paused = !screen.paused;
-		//If arrow keys are pressed, raise or lower brush radius
-		if (p.keyCode == p.UP_ARROW) {
-			if (screen.brushRadius < 10) screen.brushRadius++;
-		}
-		if (p.keyCode == p.DOWN_ARROW) {
-			if (screen.brushRadius > 0) screen.brushRadius--;
+
+		switch (p.keyCode) {
+			case 32:
+				screen.paused = !screen.paused;
+				break;
+			case p.UP_ARROW:
+				if (screen.brushRadius < 10) screen.brushRadius++;
+				break;
+			case p.DOWN_ARROW:
+				if (screen.brushRadius > 0) screen.brushRadius--;
+				break;
+			case p.LEFT_ARROW:
+				framerate -= 5;
+				p.frameRate(framerate);
+				break;
+			case p.RIGHT_ARROW:
+				framerate += 5;
+				p.frameRate(framerate);
+				break;
+			case p.CONTROL:
+				debug.toggle();
+				break;
 		}
 	}
+
 	p.mouseMoved = () => {
 		mouseNotMovedYet = false;
 	}

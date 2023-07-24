@@ -23,9 +23,9 @@ class Chunk {
         this.particleY = y * chunkSize;
         this.chunkSize = chunkSize;
         this.totalParticles = chunkSize * chunkSize;
-        this.active = false;
         this.particles = Array(this.totalParticles).fill(new Air())
         this.neighbours = Array(9).fill(null);
+        this.updateQueue = new Set();
     }
 
     markActive() {
@@ -60,6 +60,7 @@ class Chunk {
     }
 
     process() {
+        this.alreadyProcessed = true;
         let updateCount = 0;
         const particlesCopy = [...this.particles];
         particlesCopy.forEach((particle, index) => {
@@ -90,6 +91,12 @@ class Chunk {
                 chunk.setRelative(relativeX, relativeY, updatedParticle);
             }
         });
+
+        for (const update of this.updateQueue) {
+            const [x, y, updatedParticle] = update;
+            this.setRelative(x, y, updatedParticle);
+        }
+        this.updateQueue.clear();
 
         if (updateCount === 0)
             this.markInactive();
@@ -141,6 +148,7 @@ class Chunk {
     setIndex(index, particle) {
         this.particles[index] = particle;
         this.markActive();
+        this.markUpdated();
         this.activateChunksNeighbouringParticle(index);
     }
 
@@ -259,6 +267,8 @@ class ChunkManager {
                 chunk.registerNeighbour(neighbourId, chunksArray[chunkIndex + indexChange]);
             }
         });
+
+        this.processedChunks = new Set();
     }
 
     set(x, y, particle) {
@@ -307,11 +317,19 @@ class ChunkManager {
     }
 
     process() {
+        this.processedChunks.clear();
+
         // Clone the active chunks set to avoid modifying it
         // while we are iterating over it - JS doesn't agree with that
         const activeChunks = new Set(this.activeChunks);
-        for (const chunk of activeChunks)
+        for (const chunk of activeChunks) {
             chunk.process();
+            this.processedChunks.add(chunk);
+        }
+    }
+
+    chunkHasBeenProcessed(chunk) {
+        return this.processedChunks.has(chunk);
     }
 }
 

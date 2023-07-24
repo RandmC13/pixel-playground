@@ -6,19 +6,19 @@ class Debug {
         this.screen = screen;
         this.p = p;
 
-        if (!this.enabled) return;
-
-        const overlayDiv = document.createElement("div");
-        overlayDiv.style = "position:absolute;top:0;left:0;";
-        document.body.appendChild(overlayDiv);
+        this.overlayDiv = document.createElement("div");
+        this.overlayDiv.style = "position:absolute;top:0;left:0;";
+        document.body.appendChild(this.overlayDiv);
 
         this.mouseX = null;
         this.mouseY = null;
 
+        this.framerateQueueLength = 30;
+        this.framerateQueue = Array(this.framerateQueueLength);
+
         let sketch = (pdbg) => {
             this.pdbg = pdbg;
             pdbg.setup = () => {
-                pdbg.frameRate(10);
                 pdbg.noStroke();
                 pdbg.createCanvas(screen.pixelWidth, screen.pixelHeight);
             };
@@ -33,7 +33,13 @@ class Debug {
         };
 
         this.metrics = {
-            "framerate": () => this.p.getFrameRate(),
+            "framerate": () => {
+                this.framerateQueue.push(this.p.getFrameRate());
+                if (this.framerateQueue.length > this.framerateQueueLength)
+                    this.framerateQueue = this.framerateQueue.slice(1, this.framerateQueueLength);
+                
+                return this.framerateQueue.reduce((a, v) => a + v, 0) / this.framerateQueueLength;
+            },
             "mouseX": () => this.mouseX,
             "mouseY": () => this.mouseY,
             "particle": () => `${~~(this.mouseX / this.screen.particleSize)},${~~(this.mouseY / this.screen.particleSize)}`,
@@ -44,7 +50,10 @@ class Debug {
             this.chunkOverlay,
         ]
 
-        new p5(sketch, overlayDiv);
+        new p5(sketch, this.overlayDiv);
+
+        if (!this.enabled)
+            this.disable()
     }
 
     debug() {
@@ -67,7 +76,30 @@ class Debug {
         for (const chunk of dbg.screen.chunks.activeChunks) {
             dbg.pdbg.square(chunk.particleX * dbg.screen.particleSize, chunk.particleY * dbg.screen.particleSize, dbg.screen.chunkSize * dbg.screen.particleSize);
         }
+        dbg.pdbg.fill(0, 0, 255, 127);
+        for (const chunk of dbg.screen.chunks.updatedChunks) {
+            dbg.pdbg.square(chunk.particleX * dbg.screen.particleSize, chunk.particleY * dbg.screen.particleSize, dbg.screen.chunkSize * dbg.screen.particleSize);
+        }
         dbg.pdbg.pop();
+    }
+
+    toggle() {
+        if (this.enabled)
+            this.disable();
+        else
+            this.enable();
+    }
+
+    enable() {
+        this.enabled = true;
+        this.pdbg.loop();
+        this.overlayDiv.removeAttribute("hidden");
+    }
+
+    disable() {
+        this.enabled = false;
+        this.pdbg.noLoop();
+        this.overlayDiv.setAttribute("hidden", true);
     }
 }
 
