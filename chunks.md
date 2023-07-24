@@ -13,6 +13,36 @@ After being created, the chunk is marked as inactive. There only 2 ways for a ch
 
 In either case, all the of the particles within the chunk will be processed. If any updates are encountered (a particle moving, being destroyed or created), the chunk will be marked as updated and will be rendered to the screen. If no updates are encountered, the chunk is marked as inactive again.
 
+## Particle / Chunk interface
+
+Whenever a chunk is processed, the `update()` function is called for all particles within that chunk. `update()` is called with the particle's coordinates relative to its containing chunk and a reference to the containing chunk, eg `update(0, 0, Chunk())`. The coordinates 0, 0 refer to the top left particle within a chunk. Particles should perform any processing, using `chunk.getRelative()` to query surrounding particles, and return an array of Update lists. There is a `ParticleUpdate` class in `src/lib/update.js` which assists with generating this array. Each item in the array should be another array where the first two items are an X and Y coordinate (relative to the parent chunk), and the final item is the new particle to be placed at those coordinates. Dispatching the updates is handled by the `Chunk` class and particles should not modify their parent chunk.
+
+### Example Snippets
+
+```js
+// Basic particle that moves down if it can
+class BasicParticle extends Particle {
+    constructor() {
+        const type = "basic";
+        super(type, false);
+    }
+
+    update(x, y, chunk) {
+        // Get the particle at (x, y + 1), ie the particle below
+        const particleBelow = chunk.getRelative(x, y + 1);
+        if (particleBelow.type === "air") {
+            return [
+                [x, y, new Air()],  // Replace the current particle with Air
+                [x, y + 1, this],   // Replace the Air below with the current particle
+            ]
+        }
+
+        return [];
+    }
+}
+
+```
+
 ## Chunk
 
 ```js

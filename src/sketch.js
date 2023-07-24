@@ -27,7 +27,12 @@ const sketch = (p) => {
 		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, chunkSize, p);
 		//Set frame rate
 		p.frameRate(framerate);
-		p.createCanvas(screen.pixelWidth, screen.pixelHeight);
+
+		const { canvas } = p.createCanvas(screen.pixelWidth, screen.pixelHeight);
+		// Ensure canvas is selected
+		canvas.focus();
+		// Prevent right click from opening menu
+		canvas.addEventListener("contextmenu", (e) => e.preventDefault())
 
 		debug = new Debug(false, screen, p);
 		screen.drawAll();
@@ -41,8 +46,8 @@ const sketch = (p) => {
 		//Step simulation every cycle of game loop
 		if (!screen.paused) {
 			screen.stepSim();
-			if (screen.framenum % 2 == 0)
-				screen.set(screen.particleWidth / 2, 2, new Sand());
+			//if (screen.framenum % 2 == 0)
+			//	screen.set(screen.particleWidth / 2, 2, new Sand());
 		} else {
 			//If sim is paused, draw pause text
 			screen.pauseText();
@@ -54,18 +59,29 @@ const sketch = (p) => {
 
 	//Event that runs if mouse is pressed
 	p.mousePressed = () => {
-		mouseHeld = true;
+		// On right click, place only one particle
+		if (p.mouseButton === p.RIGHT)
+			screen.cursorPlace()
+		else
+			mouseHeld = true;
+
+		// prevent default behaviour
+		return false;
 	}
+
 	//Event that runs if mouse is released
 	p.mouseReleased = () => {
 		mouseHeld = false;
+
+		// prevent default behaviour
+		return false;
 	}
+
 	//Even that runs if key is pressed
 	p.keyPressed = () => {
-		//If space bar is pressed, toggle pause
-
 		switch (p.keyCode) {
 			case 32:
+				//If space bar is pressed, toggle pause
 				screen.paused = !screen.paused;
 				break;
 			case p.UP_ARROW:
@@ -75,21 +91,24 @@ const sketch = (p) => {
 				if (screen.brushRadius > 0) screen.brushRadius--;
 				break;
 			case p.LEFT_ARROW:
-				framerate -= 5;
+				framerate -= Math.min(5, framerate / 2);
 				p.frameRate(framerate);
 				break;
 			case p.RIGHT_ARROW:
-				framerate += 5;
+				framerate += Math.min(5, framerate * 2);
 				p.frameRate(framerate);
 				break;
-			case p.CONTROL:
-				debug.toggle();
-				break;
 		}
+
+		// prevent default behaviour
+		return false;
 	}
 
 	p.mouseMoved = () => {
 		mouseNotMovedYet = false;
+
+		// prevent default behaviour
+		return false;
 	}
 };
 

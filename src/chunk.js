@@ -272,7 +272,7 @@ class ChunkManager {
     }
 
     set(x, y, particle) {
-        this.getChunkFor(x, y).setAbsolute(x, y, particle);
+        this.getChunkFor(x, y)?.setAbsolute(x, y, particle);
     }
 
     registerActiveChunk(chunk) {
@@ -288,6 +288,11 @@ class ChunkManager {
     }
 
     getChunkFor(x, y) {
+        const chunkX = ~~(x / this.chunkSize);
+        const chunkY = ~~(y / this.chunkSize);
+        if (0 > chunkX || chunkX >= this.cols || 0 > chunkY || chunkY >= this.rows)
+            return null;
+
         const chunkIndex = coordPairToIndex(
             ~~(x / this.chunkSize),
             ~~(y / this.chunkSize),
