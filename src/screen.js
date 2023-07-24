@@ -1,4 +1,4 @@
-import { getColour } from "./particle";
+import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
 import Sand from "./particles/sand";
 
@@ -33,12 +33,13 @@ class Screen {
         this.grid = generateGrid(this.particleSize);
         this.gridWidth = this.grid.length;
         this.gridHeight = this.grid[0].length;
+        this.particleList = getParticleList();
+        this.particleSelected = 0;
         this.paused = false;
         this.framenum = 0;
         this.cursor = [0,0];
         this.brushRadius = 0;
         this.brushList = [];
-        this.cursorType = "sand";
     };
 
     stepSim() {
@@ -127,7 +128,7 @@ class Screen {
     drawCursor(mouseX, mouseY) {
         const alpha = 25;
         //Set colour
-        let colour = getColour(this.cursorType).map(n => n+alpha);
+        let colour = getColour(this.particleList[this.particleSelected]).map(n => n+alpha);
         this.p.fill(colour);
 
         let cursor = this.getGridCoords(mouseX, mouseY);
@@ -158,9 +159,26 @@ class Screen {
         this.p.text(string, x, y);
     }
 
+    switchParticle(increment) {
+        let tempSelection = this.particleSelected + increment;
+        //Make sure the number does not overflow
+        if (tempSelection > this.particleList.length-1) {
+            //If attempting to overflow particle list, revert to beginning
+            this.particleSelected = 0;
+            return false;
+        };
+        if (tempSelection < 0) {
+            //If attempting to underflow particle list, go to end of the list
+            this.particleSelected = this.particleList.length-1;
+            return false;
+        };
+        this.particleSelected = tempSelection;
+        return true;
+    }
+
     placeParticle(x,y) {
         //Place particle based off of current cursor setting
-        switch(this.cursorType) {
+        switch(this.particleList[this.particleSelected]) {
             case "sand":
                 this.grid[x][y] = new Sand();
                 break;

@@ -57,17 +57,21 @@ const sketch = (p) => {
 	p.keyPressed = () => {
 		//If space bar is pressed, toggle pause
 		if (p.keyCode == 32) screen.paused = !screen.paused;
-		//If arrow keys are pressed, raise or lower brush radius
+		//If up and down arrow keys are pressed, raise or lower brush radius
 		if (p.keyCode == p.UP_ARROW) {
 			if (screen.brushRadius < 10) screen.brushRadius++;
 		}
 		if (p.keyCode == p.DOWN_ARROW) {
 			if (screen.brushRadius > 0) screen.brushRadius--;
 		}
+		//If left and right arrow keys are pressed, switch between available particle types
+		if (p.keyCode == p.LEFT_ARROW) screen.switchParticle(-1);
+		if (p.keyCode == p.RIGHT_ARROW) screen.switchParticle(1);
 		//If s key is pressed whilst paused, un pause the simulation, step it and then pause again
 		if (p.keyCode == 83 && screen.paused) {
 			screen.paused = false;
 			screen.stepSim();
+			console.log(screen.particleList);
 			screen.paused = true;
 		}
 	}
