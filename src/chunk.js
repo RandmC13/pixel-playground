@@ -2,6 +2,7 @@
 
 import Air from "./particles/air";
 import { coordPairToIndex, indexToCoordPair } from "./lib/coords"
+import ParticleUpdate from "./lib/update";
 
 class ChunkNeighbourEnum {
     static TOP_LEFT = 0;
@@ -36,6 +37,10 @@ class Chunk {
         this.manager.registerInactiveChunk(this);
     }
 
+    markAddtional() {
+        this.manager.registerAdditionalChunk(this);
+    }
+
     markUpdated() {
         this.manager.registerUpdatedChunk(this);
     }
@@ -51,14 +56,6 @@ class Chunk {
         p.pop();
     }
 
-    debug(p) {
-        p.push();
-        const colour = (this.x + this.y) % 2 === 0 ? [0, 255, 0, 127] : [0, 0, 255, 127];
-        p.fill(...colour);
-        p.square(this.x * 64, this.y * 64, 64);
-        p.pop();
-    }
-
     process() {
         this.alreadyProcessed = true;
         let updateCount = 0;
@@ -68,7 +65,11 @@ class Chunk {
             if (particle.static) return;
 
             // get list of updates from particle
-            const updates = particle.update(...indexToCoordPair(index, this.chunkSize), this);
+            const updates = particle.process(...indexToCoordPair(index, this.chunkSize), this);
+            if (updates === ParticleUpdate.NullUpdate) {
+                updateCount++;
+                return;
+            }
 
             updateCount += updates.length;
 
@@ -88,7 +89,14 @@ class Chunk {
                 const relativeX = (x + this.particleX) - chunk.particleX;
                 const relativeY = (y + this.particleY) - chunk.particleY;
 
-                chunk.setRelative(relativeX, relativeY, updatedParticle);
+                if (this.manager.chunkHasBeenProcessed(chunk)) {
+                    chunk.setRelative(relativeX, relativeY, updatedParticle);
+                } else {
+                    if (!this.manager.chunkIsActive(chunk))
+                        chunk.markAddtional();
+
+                    chunk.setRelative(relativeX, relativeY, updatedParticle.withUpdateCooldown(1));
+                }
             }
         });
 
@@ -222,6 +230,7 @@ class ChunkManager {
 
         this.activeChunks = new Set();
         this.updatedChunks = new Set();
+        this.additionalChunks = new Set();
 
         this.chunkNeighbourMapping = {
             [ChunkNeighbourEnum.TOP_LEFT]:      -this.cols - 1,
@@ -279,6 +288,10 @@ class ChunkManager {
         this.activeChunks.add(chunk);
     }
 
+    registerAdditionalChunk(chunk) {
+        this.additionalChunks.add(chunk);
+    }
+
     registerInactiveChunk(chunk) {
         this.activeChunks.delete(chunk);
     }
@@ -304,8 +317,6 @@ class ChunkManager {
     drawAllChunks(p, particleSize) {
         for (const chunk of this.chunks) {
             chunk.draw(p, particleSize);
-            if (this.updatedChunks.has(chunk))
-                chunk.debug(p);
         }
     }
 
@@ -327,7 +338,17 @@ class ChunkManager {
         // Clone the active chunks set to avoid modifying it
         // while we are iterating over it - JS doesn't agree with that
         const activeChunks = new Set(this.activeChunks);
-        for (const chunk of activeChunks) {
+        this.processChunks(activeChunks);
+
+        while (this.additionalChunks.size !== 0) {
+            const additionalChunks = new Set(this.additionalChunks);
+            this.additionalChunks.clear();
+            this.processChunks(additionalChunks);
+        }
+    }
+
+    processChunks(chunkArray) {
+        for (const chunk of chunkArray) {
             chunk.process();
             this.processedChunks.add(chunk);
         }
@@ -335,6 +356,10 @@ class ChunkManager {
 
     chunkHasBeenProcessed(chunk) {
         return this.processedChunks.has(chunk);
+    }
+
+    chunkIsActive(chunk) {
+        return this.activeChunks.has(chunk);
     }
 }
 

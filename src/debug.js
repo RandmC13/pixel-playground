@@ -1,4 +1,5 @@
 import p5 from "p5"
+import ChunkManager from "./chunk";
 
 class Debug {
     constructor(enabled, screen, p) {
@@ -19,6 +20,7 @@ class Debug {
         this.framerateQueue = Array(this.framerateQueueLength);
 
         this.debugCommand = false;
+        this.debugPause = false;
 
         const sketch = (pdbg) => {
             this.pdbg = pdbg;
@@ -31,7 +33,7 @@ class Debug {
             pdbg.draw = () => {
                 this.debug();
                 this.mouseX = pdbg.mouseX;
-                this.mouseY = pdbg.mouseY;
+                this.mouseY = pdbg.mouseY;              
                 this.debugFrameCount++;
             }
 
@@ -52,6 +54,29 @@ class Debug {
                     case 67: // C
                         this.toggleOverlay("ChunkBorders");
                         break;
+                    case 80: // P
+                        this.debugPause = !this.debugPause;
+                        if (this.debugPause)
+                            this.p.noLoop();
+                        else
+                            this.p.loop();
+                        break;
+                    case 82: // R
+                        this.screen.chunks = new ChunkManager(this.screen.chunkWidth, this.screen.chunkHeight, this.screen.chunkSize);
+                        this.screen.framenum = 0;
+                        this.screen.drawAll();
+                        // Hide cursor
+                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.screen.particleSize, this.mouseY / this.screen.particleSize))
+                            chunk.draw(this.p, this.screen.particleSize);
+                        break;
+                    case 83: // S
+                        if (!this.debugPause) break;
+                        this.p.redraw();
+
+                        // Hide cursor
+                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.screen.particleSize, this.mouseY / this.screen.particleSize))
+                            chunk.draw(this.p, this.screen.particleSize);
+                        break;
                     case 90: // Z
                         this.toggleOverlay("ChunkUpdates");
                         break;
@@ -65,16 +90,20 @@ class Debug {
         };
 
         this.metrics = {
+            framenum: {
+                enabled: true,
+                fn: (dbg) => dbg.screen.framenum,
+            },
             framerate: {
                 enabled: true,
                 fn: (dbg) => {
                     let retval;
                     if (dbg.debugFrameCount % dbg.framerateQueueLength === 0) {
-                        retval = dbg.framerateQueue.reduce((a, v) => a + v, 0) / dbg.framerateQueueLength;
+                        retval = (dbg.framerateQueue.reduce((a, v) => a + v, 0) / dbg.framerateQueueLength).toPrecision(4);
                     } else {
                         retval = dbg.metricValues.framerate
                     }
-                    dbg.framerateQueue[dbg.debugFrameCount % dbg.framerateQueueLength] = dbg.pdbg.getFrameRate();
+                    dbg.framerateQueue[dbg.debugFrameCount % dbg.framerateQueueLength] = dbg.p.getFrameRate();
                     return retval;
                 }
             },

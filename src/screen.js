@@ -38,9 +38,10 @@ class Screen {
 
         this.paused = false;
         this.cursor = [0,0];
+        this.brushes = {};
         this.brushRadius = 0;
         this.brushList = [];
-        this.cursorType = "sand";
+        this.cursorType = "air";
     };
 
     drawAll() {
@@ -111,6 +112,35 @@ class Screen {
         return true;
     }
 
+    generateBrush(radius) {
+        // Rather than generating brushes on the fly, we can generate a series of offsets
+        // on simulation start and apply them to hopefully get a speed up
+        // Using the big brush size seems to cut the FPS in half
+        const offsets = new Set();
+        if (r === 0) {
+            this.brushes.add([0, 0]);
+            return;
+        }
+
+        const absR = (r + 0.5) * this.particleSize;
+        const minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
+        const TWO_PI = 2 * Math.PI;
+
+        for (let theta = 0; theta < TWO_PI; theta += 0.05) {
+            for (let radius = 0; radius < absR + (0.5 * this.particleSize); radius += minR) {
+                const offsetX = Math.floor((radius * Math.sin(theta)) / this.particleSize);
+                const offsetY = Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const centreX = (offsetX + 0.5) * this.particleSize;
+                const centreY = (offsetY + 0.5) * this.particleSize;
+                const distance = Math.sqrt((centreX * centreX) + (centreY * centreY));
+                if (absR >= distance)
+                    offsets.push([offsetX, offsetY]);
+            }
+        }
+
+        this.brushes = offsets;
+    }
+
     drawCursor(mouseX, mouseY) {
         const alpha = 25;
         //Set colour
@@ -130,17 +160,26 @@ class Screen {
             this.p.square(...this.getDrawCoords(...particle),this.particleSize);
         });
 
-        this.chunks.getChunkFor(x, y)?.markUpdated();
+        for (const chunk of this.getBrushChunks(x, y))
+            chunk.markUpdated();
+        
+    }
+
+    getBrushChunks(x, y) {
+        const chunks = new Set();
+        chunks.add(this.chunks.getChunkFor(x, y));
         let chunkRadius = Math.ceil(this.brushRadius / this.chunkSize) + 1;
         for (let chunkX = 0; chunkX < chunkRadius; chunkX++) {
             for (let chunkY = 0; chunkY < chunkRadius; chunkY++) {
-                this.chunks.getChunkFor(x - chunkX * this.chunkSize, y - chunkY * this.chunkSize)?.markUpdated();
-                this.chunks.getChunkFor(x + chunkX * this.chunkSize, y - chunkY * this.chunkSize)?.markUpdated();
-                this.chunks.getChunkFor(x - chunkX * this.chunkSize, y + chunkY * this.chunkSize)?.markUpdated();
-                this.chunks.getChunkFor(x + chunkX * this.chunkSize, y + chunkY * this.chunkSize)?.markUpdated();
+                chunks.add(this.chunks.getChunkFor(x - chunkX * this.chunkSize, y - chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x + chunkX * this.chunkSize, y - chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x - chunkX * this.chunkSize, y + chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x + chunkX * this.chunkSize, y + chunkY * this.chunkSize));
             }
         }
-        
+
+        chunks.delete(null);
+        return chunks;
     }
 
     cursorPlace() {

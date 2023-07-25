@@ -1,4 +1,7 @@
 class ParticleUpdate {
+    // Used by particle with an update cooldown to keep their chunk active 
+    static NullUpdate = null;
+
     constructor(particle, x, y) {
         this.particle = particle;
         this.x = x;

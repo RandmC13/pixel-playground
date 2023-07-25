@@ -1,3 +1,5 @@
+import ParticleUpdate from "./lib/update";
+
 /*Potential particle properties:
 -colour
 -type
@@ -21,14 +23,29 @@ const getColour = (type) => {
 }
 
 class Particle {
-    constructor(type, stationary) {
+    constructor(type, stationary, updateCooldown=0) {
         this.colour = getColour(type);
         this.type = type;
         this.static = stationary;
+        this.updateCooldown = updateCooldown;
     }
 
-    update() {
-        return false;
+    withUpdateCooldown(cooldown) {
+        this.updateCooldown = cooldown;
+        return this;
+    }
+
+    process(x, y, chunk) {
+        if (this.updateCooldown > 0) {
+            this.updateCooldown--;
+            return ParticleUpdate.NullUpdate;
+        }
+
+        return this.update(x, y, chunk);
+    }
+
+    update(x, y, chunk) {
+        return [];
     }
 }
 

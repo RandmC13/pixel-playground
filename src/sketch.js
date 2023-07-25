@@ -13,7 +13,7 @@ const sketch = (p) => {
 	let mouseHeld = false;
 	let mouseNotMovedYet = true;
 
-	const particleSize = 4;
+	const particleSize = 8;
 	const chunkSize = 8;
 	let framerate = 60;
 
