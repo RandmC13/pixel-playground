@@ -134,11 +134,11 @@ class Screen {
 
         for (let theta = 0; theta < TWO_PI; theta += 0.05) {
             for (let radius = 0; radius < absR + (0.5 * this.particleSize); radius += minR) {
-                const offsetX = Math.floor((radius * Math.sin(theta)) / this.particleSize);
-                const offsetY = Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const offsetX = 0.5 + Math.floor((radius * Math.sin(theta)) / this.particleSize);
+                const offsetY = 0.5 + Math.floor((radius * Math.cos(theta)) / this.particleSize);
                 const pointString = `${offsetX},${offsetY}`;
-                const centreX = (offsetX + 0.5) * this.particleSize;
-                const centreY = (offsetY + 0.5) * this.particleSize;
+                const centreX = (offsetX + 0.5) * this.particleSize - 0.5;
+                const centreY = (offsetY + 0.5) * this.particleSize - 0.5;
                 const distance = Math.sqrt((centreX * centreX) + (centreY * centreY));
 
                 // Array.includes compares by reference (JS add Tuples already)
@@ -156,6 +156,7 @@ class Screen {
     }
 
     *getBrushParticles() {
+        // Generator function is used to avoid looping over the items twice
         const [x,y] = this.cursor;
 
         for (const offset of this.brushes[this.brushRadius]) {
@@ -176,12 +177,6 @@ class Screen {
 
         for (const particle of particles)
             this.p.square(...this.getDrawCoords(particle[0], particle[1]), this.particleSize);
-
-
-        //Draw each particle
-        /*this.brushList.forEach(particle => {
-            this.p.square(...this.getDrawCoords(...particle),this.particleSize);
-        });*/
 
         const brushChunks = this.getBrushChunks(...this.cursor);
         for (const chunk of brushChunks)
