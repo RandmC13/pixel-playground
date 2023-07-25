@@ -42,6 +42,10 @@ class Screen {
         this.brushRadius = 0;
         this.brushList = [];
         this.cursorType = "air";
+
+        for (let radius = 0; radius < 20; radius++) {
+            this.generateBrush(radius);
+        }
     };
 
     drawAll() {
@@ -112,15 +116,17 @@ class Screen {
         return true;
     }
 
-    generateBrush(radius) {
+    generateBrush(r) {
         // Rather than generating brushes on the fly, we can generate a series of offsets
         // on simulation start and apply them to hopefully get a speed up
         // Using the big brush size seems to cut the FPS in half
-        const offsets = new Set();
+        const offsets = [[0,0]];
         if (r === 0) {
-            this.brushes.add([0, 0]);
+            this.brushes[r] = offsets;
             return;
         }
+
+        const includedPoints = new Set(["0,0"]);
 
         const absR = (r + 0.5) * this.particleSize;
         const minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
@@ -130,15 +136,23 @@ class Screen {
             for (let radius = 0; radius < absR + (0.5 * this.particleSize); radius += minR) {
                 const offsetX = Math.floor((radius * Math.sin(theta)) / this.particleSize);
                 const offsetY = Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const pointString = `${offsetX},${offsetY}`;
                 const centreX = (offsetX + 0.5) * this.particleSize;
                 const centreY = (offsetY + 0.5) * this.particleSize;
                 const distance = Math.sqrt((centreX * centreX) + (centreY * centreY));
-                if (absR >= distance)
+
+                // Array.includes compares by reference (JS add Tuples already)
+                // So we will convert the point to a string and store it in a set
+                // to check if the point is already included. Slow, but this code is only
+                // run once at start.
+                if (absR >= distance && !includedPoints.has(pointString)) {
                     offsets.push([offsetX, offsetY]);
+                    includedPoints.add(pointString);
+                }
             }
         }
 
-        this.brushes = offsets;
+        this.brushes[r] = offsets;
     }
 
     drawCursor(mouseX, mouseY) {
@@ -150,15 +164,16 @@ class Screen {
         let cursor = this.getGridCoords(mouseX, mouseY);
         if (cursor) this.cursor = cursor;
 
-        let [x,y] = this.cursor;
+        const [x,y] = this.cursor;
 
-        let [centerX,centerY] = this.getDrawCoords(x,y).map(n => n+(0.5*this.particleSize));
-        this.particlesInRadius(centerX,centerY,this.brushRadius);
+        this.brushes[this.brushRadius].forEach(coords => {
+            this.p.square(...this.getDrawCoords(x + coords[0], y + coords[1]), this.particleSize);
+        })
 
         //Draw each particle
-        this.brushList.forEach(particle => {
+        /*this.brushList.forEach(particle => {
             this.p.square(...this.getDrawCoords(...particle),this.particleSize);
-        });
+        });*/
 
         for (const chunk of this.getBrushChunks(x, y))
             chunk.markUpdated();
