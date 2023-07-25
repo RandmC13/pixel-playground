@@ -13,8 +13,8 @@ const sketch = (p) => {
 	let mouseHeld = false;
 	let mouseNotMovedYet = true;
 
-	const particleSize = 8;
-	const chunkSize = 8;
+	const particleSize = 4;
+	const chunkSize = 4;
 	let framerate = 60;
 
 	//Function runs once on page load

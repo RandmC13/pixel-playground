@@ -41,7 +41,7 @@ class Screen {
         this.brushes = {};
         this.brushRadius = 0;
         this.brushList = [];
-        this.cursorType = "air";
+        this.cursorType = "sand";
 
         for (let radius = 0; radius < 20; radius++) {
             this.generateBrush(radius);
@@ -155,27 +155,36 @@ class Screen {
         this.brushes[r] = offsets;
     }
 
+    *getBrushParticles() {
+        const [x,y] = this.cursor;
+
+        for (const offset of this.brushes[this.brushRadius]) {
+            yield [x + offset[0], y + offset[1]];
+        }
+    }
+
     drawCursor(mouseX, mouseY) {
         const alpha = 25;
         //Set colour
         let colour = getColour(this.cursorType).map(n => n+alpha);
         this.p.fill(colour);
 
-        let cursor = this.getGridCoords(mouseX, mouseY);
+        let cursor = (this.brushRadius === 0) ? this.getGridCoords(mouseX, mouseY) : this.getGridCoords(mouseX + 0.5 * this.particleSize, mouseY + 0.5 * this.particleSize);
         if (cursor) this.cursor = cursor;
 
-        const [x,y] = this.cursor;
+        const particles = this.getBrushParticles();
 
-        this.brushes[this.brushRadius].forEach(coords => {
-            this.p.square(...this.getDrawCoords(x + coords[0], y + coords[1]), this.particleSize);
-        })
+        for (const particle of particles)
+            this.p.square(...this.getDrawCoords(particle[0], particle[1]), this.particleSize);
+
 
         //Draw each particle
         /*this.brushList.forEach(particle => {
             this.p.square(...this.getDrawCoords(...particle),this.particleSize);
         });*/
 
-        for (const chunk of this.getBrushChunks(x, y))
+        const brushChunks = this.getBrushChunks(...this.cursor);
+        for (const chunk of brushChunks)
             chunk.markUpdated();
         
     }
@@ -198,7 +207,8 @@ class Screen {
     }
 
     cursorPlace() {
-        this.brushList.forEach(particle => this.placeParticle(...particle));
+        for (const particle of this.getBrushParticles())
+            this.placeParticle(...particle);
     }
 
     pauseText() {
