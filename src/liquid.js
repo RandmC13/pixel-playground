@@ -1,5 +1,4 @@
 import { Particle } from "./particle";
-import Air from "./particles/air";
 
 class Liquid extends Particle {
     constructor(type) {
