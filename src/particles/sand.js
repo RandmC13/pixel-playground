@@ -1,5 +1,5 @@
-import Air from "./air";
 import { Particle } from "../particle";
+import Air from "./air";
 
 class Sand extends Particle {
     constructor() {
@@ -23,16 +23,13 @@ class Sand extends Particle {
             grid[x][y] = new Air();
         };
 
-        //Check if sand is on the ground
+        //Check if sand is on the ground, if not attempt to sink sand
         if (y+1 > grid[0].length-1) {
             this.static = true;
             return false;
-        }
-
-        //Check if sand can fall down
-        if (grid[x][y+1].type == "air") {
-            goDown();
-            return true;
+        } else {
+            //Attempt to sink, if it works, exit the function
+            if (this.sink(x,y,grid)) return true;
         }
 
         //If sand can't fall down check if it can fall left or right

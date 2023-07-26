@@ -1,4 +1,3 @@
-import { WatchIgnorePlugin } from "webpack";
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
 import Sand from "./particles/sand";

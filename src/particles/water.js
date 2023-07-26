@@ -1,9 +1,10 @@
 import { Particle } from "../particle";
+import Air from "./air";
 
 class Water extends Particle {
     constructor() {
         const type = "water";
-        super(type, false, liquid=true);
+        super(type, false);
     }
 
     update(x,y,grid) {
@@ -23,11 +24,9 @@ class Water extends Particle {
         };
 
         //If water can go down, do it
-        if (y+1 > grid[0].length-1) {
-            if (grid[x][y+1].type == "air") {
-                goDown();
-                return true;
-            } 
+        if (y+1 < grid[0].length) {
+            //Attempt to sink, if it works, exit the function
+            if (this.sink(x,y,grid)) return true;
         }
         //Check if water can go left or right
         let left = false;

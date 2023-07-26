@@ -32,7 +32,7 @@ const sketch = (p) => {
 	//Game loop
 	p.draw = () => {
 		//Make stream of sand (place sand every 2 frames)
-		if (screen.framenum % 2 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
+		if (screen.framenum % 3 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
 
 		//If mouse is held, place a particle
 		if (mouseHeld && !mouseNotMovedYet) screen.cursorPlace();
@@ -71,7 +71,6 @@ const sketch = (p) => {
 		if (p.keyCode == 83 && screen.paused) {
 			screen.paused = false;
 			screen.stepSim();
-			console.log(screen.particleList);
 			screen.paused = true;
 		}
 	}

@@ -14,15 +14,18 @@
 const particles = {
     "sand": {
         colour: [194,178,128],
-        density: 5
+        density: 5,
+        liquid: false
     },
     "air": {
         colour: [70,70,70],
-        density: 0
+        density: 0,
+        liquid: true
     },
     "water": {
         colour: [0,105,148],
-        density: 1
+        density: 1,
+        liquid: true
     }
 };
 
@@ -35,15 +38,28 @@ const getParticleList = () => {
 }
 
 class Particle {
-    constructor(type, stationary, liquid=false) {
+    constructor(type, stationary) {
         this.type = type;
         this.colour = particles[this.type]["colour"];
         this.density = particles[this.type]["density"];
+        this.liquid = particles[this.type]["liquid"];
         this.static = stationary;
-        this.liquid = liquid;
     }
 
     update() {
+        return false;
+    }
+
+    sink(x,y,grid) {
+        //Check if object can sink
+        if (grid[x][y+1].liquid) {
+            if (this.density > grid[x][y+1].density) {
+                let clone = grid[x][y];
+                grid[x][y] = grid[x][y+1];
+                grid[x][y+1] = clone;
+                return true;
+            }
+        }
         return false;
     }
 }
