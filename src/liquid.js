@@ -8,13 +8,15 @@ class Liquid extends Particle {
 
     update(x,y,grid) {
         const goLeft = () => {
-            grid[x-1][y] = grid[x][y];
-            grid[x][y] = new Air();
+            let clone = grid[x][y];
+            grid[x][y] = grid[x-1][y];
+            grid[x-1][y] = clone;
         };
 
         const goRight = () => {
-            grid[x+1][y] = grid[x][y];
-            grid[x][y] = new Air();
+            let clone = grid[x][y];
+            grid[x][y] = grid[x+1][y];
+            grid[x+1][y] = clone;
         };
 
         //If liquid can go down, do it
@@ -27,15 +29,15 @@ class Liquid extends Particle {
         let right = false;
 
         if (x-1 >= 0) {
-            if (grid[x-1][y].type == "air") left = true;
+            if (grid[x-1][y].liquid) left = true;
         };
         if (x+1 < grid.length) {
-            if (grid[x+1][y].type == "air") right = true;
+            if (grid[x+1][y].liquid) right = true;
         };
 
         //If liquid can go either way, choose a random direction
         if (left && right) {
-            if (Math.random() < 0.5) {
+            if (Math.random() > 0.5) {
                 goLeft();
                 return true;
             }

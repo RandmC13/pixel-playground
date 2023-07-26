@@ -80,8 +80,8 @@ class Screen {
         let gridX = Math.floor(x / this.particleSize);
         let gridY = Math.floor(y / this.particleSize);
 
-        if (gridX < 0 || gridX > this.grid.length) return false;
-        if (gridY < 0 || gridY > this.grid[0].length) return false;
+        if (gridX < 0 || gridX > this.grid.length-1) return false;
+        if (gridY < 0 || gridY > this.grid[0].length-1) return false;
 
         return [gridX,gridY];
     }

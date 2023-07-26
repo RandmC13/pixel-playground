@@ -18,7 +18,7 @@ const particles = {
         liquid: false
     },
     "air": {
-        colour: [70,70,70],
+        colour: [90,90,90],
         density: 0,
         liquid: true
     },
