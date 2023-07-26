@@ -26,6 +26,11 @@ const particles = {
         colour: [0,105,148],
         density: 1,
         liquid: true
+    },
+    "oil": {
+        colour: [55,58,54],
+        density: 0.8,
+        liquid: true
     }
 };
 

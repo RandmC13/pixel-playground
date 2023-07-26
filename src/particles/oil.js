@@ -1,8 +1,8 @@
 import Liquid from "../liquid";
 
-class Water extends Liquid {
+class Oil extends Liquid {
     constructor() {
-        const type = "water";
+        const type = "oil";
         super(type);
     }
 
@@ -11,4 +11,4 @@ class Water extends Liquid {
     }
 }
 
-export default Water;
+export default Oil;

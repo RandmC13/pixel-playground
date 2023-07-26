@@ -1,5 +1,6 @@
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
+import Oil from "./particles/oil";
 import Sand from "./particles/sand";
 import Water from "./particles/water";
 
@@ -189,6 +190,8 @@ class Screen {
             case "water":
                 this.grid[x][y] = new Water();
                 break;
+            case "oil":
+                this.grid[x][y] = new Oil();
         }
     }
 };
