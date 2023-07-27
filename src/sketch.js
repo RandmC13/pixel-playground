@@ -13,7 +13,7 @@ const sketch = (p) => {
 	let mouseHeld = false;
 	let mouseNotMovedYet = true;
 
-	const particleSize = 4;
+	const particleSize = 16;
 	const chunkSize = 4;
 	let framerate = 60;
 
@@ -34,7 +34,11 @@ const sketch = (p) => {
 		// Prevent right click from opening menu
 		canvas.addEventListener("contextmenu", (e) => e.preventDefault())
 
-		debug = new Debug(false, screen, p);
+		debug = new Debug(false, screen, p, {
+			framerate,
+			chunkSize,
+			particleSize,
+		});
 		screen.drawAll();
 	};
 
@@ -91,18 +95,18 @@ const sketch = (p) => {
 				if (screen.brushRadius > 0) screen.brushRadius--;
 				break;
 			case p.LEFT_ARROW:
-				framerate -= Math.min(5, framerate / 2);
-				p.frameRate(framerate);
+				screen.switchParticle(-1);
 				break;
 			case p.RIGHT_ARROW:
-				framerate += Math.min(5, framerate * 2);
-				p.frameRate(framerate);
+				screen.switchParticle(1)
 				break;
 		}
+
 		//If s key is pressed whilst paused, un pause the simulation, step it and then pause again
 		if (p.keyCode == 83 && screen.paused) {
 			screen.paused = false;
 			screen.stepSim();
+			console.log(screen.particleList);
 			screen.paused = true;
 		}
 

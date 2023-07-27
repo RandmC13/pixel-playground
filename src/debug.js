@@ -2,7 +2,7 @@ import p5 from "p5"
 import ChunkManager from "./chunk";
 
 class Debug {
-    constructor(enabled, screen, p) {
+    constructor(enabled, screen, p, config) {
         this.enabled = enabled;
         this.screen = screen;
         this.p = p;
@@ -21,6 +21,8 @@ class Debug {
 
         this.debugCommand = false;
         this.debugPause = false;
+
+        this.config = config;
 
         const sketch = (pdbg) => {
             this.pdbg = pdbg;
@@ -62,25 +64,35 @@ class Debug {
                             this.p.loop();
                         break;
                     case 82: // R
-                        this.screen.chunks = new ChunkManager(this.screen.chunkWidth, this.screen.chunkHeight, this.screen.chunkSize);
+                        this.screen.chunks = new ChunkManager(this.screen.chunkWidth, this.screen.chunkHeight, this.config.chunkSize);
                         this.screen.framenum = 0;
                         this.screen.drawAll();
                         // Hide cursor
-                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.screen.particleSize, this.mouseY / this.screen.particleSize))
-                            chunk.draw(this.p, this.screen.particleSize);
+                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.config.particleSize, this.mouseY / this.config.particleSize))
+                            chunk.draw(this.p, this.config.particleSize);
                         break;
                     case 83: // S
                         if (!this.debugPause) break;
                         this.p.redraw();
 
                         // Hide cursor
-                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.screen.particleSize, this.mouseY / this.screen.particleSize))
-                            chunk.draw(this.p, this.screen.particleSize);
+                        for (const chunk of this.screen.getBrushChunks(this.mouseX / this.config.particleSize, this.mouseY / this.config.particleSize))
+                            chunk.draw(this.p, this.config.particleSize);
                         break;
                     case 90: // Z
                         this.toggleOverlay("ChunkUpdates");
                         break;
+                    case pdbg.LEFT_ARROW:
+                        this.config.framerate -= Math.min(5, this.config.framerate / 2);
+                        this.p.frameRate(this.config.framerate);
+                        break;
+                    case pdbg.RIGHT_ARROW:
+                        this.config.framerate += Math.min(5, this.config.framerate * 2);
+                        this.p.frameRate(this.config.framerate);
+                        break;
                 }
+
+                return false;
             }
 
             pdbg.keyReleased = () => {
@@ -117,15 +129,15 @@ class Debug {
             },
             particle: {
                 enabled: true,
-                fn: (dbg) => `${~~(dbg.mouseX / dbg.screen.particleSize)},${~~(dbg.mouseY / dbg.screen.particleSize)}`,
+                fn: (dbg) => `${~~(dbg.mouseX / dbg.config.particleSize)},${~~(dbg.mouseY / dbg.config.particleSize)}`,
             },
             particleInChunk: {
                 enabled: true,
-                fn: (dbg) => `${~~(dbg.mouseX / dbg.screen.particleSize) % dbg.screen.chunkSize},${~~(dbg.mouseY / dbg.screen.particleSize) % dbg.screen.chunkSize}`
+                fn: (dbg) => `${~~(dbg.mouseX / dbg.config.particleSize) % dbg.config.chunkSize},${~~(dbg.mouseY / dbg.config.particleSize) % dbg.config.chunkSize}`
             },
             chunk: {
                 enabled: true,
-                fn: (dbg) => `${~~(dbg.mouseX / (dbg.screen.particleSize * dbg.screen.chunkSize))},${~~(dbg.mouseY / (dbg.screen.particleSize * dbg.screen.chunkSize))}`
+                fn: (dbg) => `${~~(dbg.mouseX / (dbg.config.particleSize * dbg.config.chunkSize))},${~~(dbg.mouseY / (dbg.config.particleSize * dbg.config.chunkSize))}`
             },
         }
 
@@ -140,11 +152,11 @@ class Debug {
                     dbg.pdbg.push();
                     dbg.pdbg.fill(0, 255, 0, 127);
                     for (const chunk of dbg.screen.chunks.activeChunks) {
-                        dbg.pdbg.square(chunk.particleX * dbg.screen.particleSize, chunk.particleY * dbg.screen.particleSize, dbg.screen.chunkSize * dbg.screen.particleSize);
+                        dbg.pdbg.square(chunk.particleX * dbg.config.particleSize, chunk.particleY * dbg.config.particleSize, dbg.config.chunkSize * dbg.config.particleSize);
                     }
                     dbg.pdbg.fill(0, 0, 255, 127);
                     for (const chunk of dbg.screen.chunks.updatedChunks) {
-                        dbg.pdbg.square(chunk.particleX * dbg.screen.particleSize, chunk.particleY * dbg.screen.particleSize, dbg.screen.chunkSize * dbg.screen.particleSize);
+                        dbg.pdbg.square(chunk.particleX * dbg.config.particleSize, chunk.particleY * dbg.config.particleSize, dbg.config.chunkSize * dbg.config.particleSize);
                     }
                     dbg.pdbg.pop();
                 },
@@ -155,8 +167,8 @@ class Debug {
                     const [chunkX, chunkY] = this.metricValues.chunk.split(",");
                     dbg.pdbg.push();
                     dbg.pdbg.stroke(40);
-                    dbg.pdbg.strokeWeight(dbg.screen.particleSize / 2);
-                    const chunkPixelSize = dbg.screen.chunkSize * dbg.screen.particleSize;
+                    dbg.pdbg.strokeWeight(dbg.config.particleSize / 2);
+                    const chunkPixelSize = dbg.config.chunkSize * dbg.config.particleSize;
                     for (let x = 0; x < dbg.screen.chunks.cols; x++) {
                         for (let y = 0; y < dbg.screen.chunks.cols; y++) {
                             dbg.pdbg.noFill();

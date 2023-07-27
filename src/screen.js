@@ -1,5 +1,5 @@
 import ChunkManager from "./chunk";
-import { getColour } from "./particle";
+import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
 import Sand from "./particles/sand";
 
@@ -29,6 +29,8 @@ class Screen {
         ] = calculateDimensions(windowWidth,windowHeight,particleSize);
 
         this.p = sketchObj;
+        this.particleList = getParticleList();
+        this.particleSelected = 0;
         this.framenum = 0;
 
         this.particleSize = particleSize;
@@ -40,8 +42,6 @@ class Screen {
         this.cursor = [0,0];
         this.brushes = {};
         this.brushRadius = 0;
-        this.brushList = [];
-        this.cursorType = "sand";
 
         for (let radius = 0; radius < 20; radius++) {
             this.generateBrush(radius);
@@ -126,6 +126,10 @@ class Screen {
             return;
         }
 
+        // Array.includes compares by reference (JS add Tuples already)
+        // So we will convert the point to a string and store it in a set
+        // to check if the point is already included. Slow, but this code is only
+        // run once at start.
         const includedPoints = new Set(["0,0"]);
 
         const absR = (r + 0.5) * this.particleSize;
@@ -134,18 +138,17 @@ class Screen {
 
         for (let theta = 0; theta < TWO_PI; theta += 0.05) {
             for (let radius = 0; radius < absR + (0.5 * this.particleSize); radius += minR) {
-                const offsetX = 0.5 + Math.floor((radius * Math.sin(theta)) / this.particleSize);
-                const offsetY = 0.5 + Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const pointX = Math.floor((radius * Math.sin(theta)) / this.particleSize);
+                const pointY = Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const [offsetX, offsetY] = [Math.floor(pointX), Math.floor(pointY)];
                 const pointString = `${offsetX},${offsetY}`;
-                const centreX = (offsetX + 0.5) * this.particleSize - 0.5;
-                const centreY = (offsetY + 0.5) * this.particleSize - 0.5;
+                if (includedPoints.has(pointString)) continue;
+
+                const centreX = (pointX + 0.5) * this.particleSize;
+                const centreY = (pointY + 0.5) * this.particleSize;
                 const distance = Math.sqrt((centreX * centreX) + (centreY * centreY));
 
-                // Array.includes compares by reference (JS add Tuples already)
-                // So we will convert the point to a string and store it in a set
-                // to check if the point is already included. Slow, but this code is only
-                // run once at start.
-                if (absR >= distance && !includedPoints.has(pointString)) {
+                if (absR >= distance) {
                     offsets.push([offsetX, offsetY]);
                     includedPoints.add(pointString);
                 }
@@ -167,7 +170,7 @@ class Screen {
     drawCursor(mouseX, mouseY) {
         const alpha = 25;
         //Set colour
-        let colour = getColour(this.cursorType).map(n => n+alpha);
+        let colour = getColour(this.particleList[this.particleSelected]).map(n => n+alpha);
         this.p.fill(colour);
 
         let cursor = (this.brushRadius === 0) ? this.getGridCoords(mouseX, mouseY) : this.getGridCoords(mouseX + 0.5 * this.particleSize, mouseY + 0.5 * this.particleSize);
@@ -216,9 +219,26 @@ class Screen {
         this.p.text(string, x, y);
     }
 
+    switchParticle(increment) {
+        let tempSelection = this.particleSelected + increment;
+        //Make sure the number does not overflow
+        if (tempSelection > this.particleList.length-1) {
+            //If attempting to overflow particle list, revert to beginning
+            this.particleSelected = 0;
+            return false;
+        };
+        if (tempSelection < 0) {
+            //If attempting to underflow particle list, go to end of the list
+            this.particleSelected = this.particleList.length-1;
+            return false;
+        };
+        this.particleSelected = tempSelection;
+        return true;
+    }
+
     placeParticle(x,y) {
         //Place particle based off of current cursor setting
-        switch(this.cursorType) {
+        switch(this.particleList[this.particleSelected]) {
             case "sand":
                 this.set(x, y, new Sand());
                 break;
