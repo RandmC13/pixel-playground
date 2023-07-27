@@ -333,8 +333,6 @@ class ChunkManager {
     }
 
     process() {
-        this.processedChunks.clear();
-
         // Clone the active chunks set to avoid modifying it
         // while we are iterating over it - JS doesn't agree with that
         const activeChunks = new Set(this.activeChunks);
@@ -348,6 +346,7 @@ class ChunkManager {
     }
 
     processChunks(chunkArray) {
+        this.processedChunks.clear();
         for (const chunk of chunkArray) {
             chunk.process();
             this.processedChunks.add(chunk);

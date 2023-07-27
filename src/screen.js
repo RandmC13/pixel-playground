@@ -1,7 +1,9 @@
 import ChunkManager from "./chunk";
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
+import Oil from "./particles/oil";
 import Sand from "./particles/sand";
+import Water from "./particles/water";
 
 class Screen {
     constructor(windowWidth, windowHeight, particleSize, chunkSize, sketchObj) {
@@ -69,8 +71,8 @@ class Screen {
         let gridX = Math.floor(x / this.particleSize);
         let gridY = Math.floor(y / this.particleSize);
 
-        if (gridX < 0 || gridX > this.particleWidth) return false;
-        if (gridY < 0 || gridY > this.particleHeight) return false;
+        if (gridX < 0 || gridX > this.particleWidth-1) return false;
+        if (gridY < 0 || gridY > this.particleHeight-1) return false;
 
         return [gridX,gridY];
     }
@@ -245,6 +247,11 @@ class Screen {
             case "air":
                 this.set(x, y, new Air());
                 break;
+            case "water":
+                this.set(x, y, new Water());
+                break;
+            case "oil":
+                this.set(x, y, new Oil());
         }
     }
 

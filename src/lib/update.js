@@ -2,11 +2,33 @@ class ParticleUpdate {
     // Used by particle with an update cooldown to keep their chunk active 
     static NullUpdate = null;
 
-    constructor(particle, x, y) {
+    constructor(particle, x, y, chunk) {
         this.particle = particle;
         this.x = x;
         this.y = y;
+        this.chunk = chunk;
         this.updates = [];
+        this.loadedParticles = {};
+    }
+
+    getParticle(offsetX, offsetY) {
+        const position = [offsetX, offsetY];
+        if (position in this.loadedParticles)
+            return this.loadedParticles[position];
+        
+        const particle = this.chunk.getRelative(this.x + offsetX, this.y + offsetY);
+        this.loadedParticles[position] = particle;
+        return particle;
+    }
+
+    canSink() {
+        const particleBelow = this.getParticle(0, 1);
+        return (particleBelow !== null && particleBelow.liquid && this.particle.density > particleBelow.density);
+    }
+
+    sink() {
+        const particleBelow = this.getParticle(0, 1);
+        return this.replaceWith(particleBelow).moveDown().done();
     }
 
     replaceWith(newParticle) {

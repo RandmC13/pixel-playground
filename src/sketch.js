@@ -50,8 +50,8 @@ const sketch = (p) => {
 		//Step simulation every cycle of game loop
 		if (!screen.paused) {
 			screen.stepSim();
-			if (screen.framenum % 2 == 0)
-				screen.set(screen.particleWidth / 2, 2, new Sand());
+			//if (screen.framenum % 2 == 0)
+			//	screen.set(screen.particleWidth / 2, 2, new Sand());
 		} else {
 			//If sim is paused, draw pause text
 			screen.pauseText();
@@ -106,7 +106,6 @@ const sketch = (p) => {
 		if (p.keyCode == 83 && screen.paused) {
 			screen.paused = false;
 			screen.stepSim();
-			console.log(screen.particleList);
 			screen.paused = true;
 		}
 
