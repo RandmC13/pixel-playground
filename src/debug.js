@@ -139,6 +139,14 @@ class Debug {
                 enabled: true,
                 fn: (dbg) => `${~~(dbg.mouseX / (dbg.config.particleSize * dbg.config.chunkSize))},${~~(dbg.mouseY / (dbg.config.particleSize * dbg.config.chunkSize))}`
             },
+            particleType: {
+                enabled: true,
+                fn: (dbg) => {
+                    const [particleX, particleY] = [~~(dbg.mouseX / dbg.config.particleSize), ~~(dbg.mouseY / dbg.config.particleSize)];
+                    const chunk = dbg.screen.chunks.getChunkFor(particleX, particleY);
+                    return chunk?.getRelative(particleX - chunk.particleX, particleY - chunk.particleY)?.type;
+                }
+            }
         }
 
         // Dict containing previous values for all metrics

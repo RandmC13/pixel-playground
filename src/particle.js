@@ -33,6 +33,11 @@ const particles = {
         colour: [55,58,54],
         density: 0.8,
         liquid: true
+    },
+    "metal": {
+        colour: [127,127,127],
+        density: 100,
+        liquid: false
     }
 };
 

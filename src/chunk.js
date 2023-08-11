@@ -57,7 +57,6 @@ class Chunk {
     }
 
     process() {
-        this.alreadyProcessed = true;
         let updateCount = 0;
         const particlesCopy = [...this.particles];
         particlesCopy.forEach((particle, index) => {

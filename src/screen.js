@@ -1,6 +1,7 @@
 import ChunkManager from "./chunk";
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
+import Metal from "./particles/metal";
 import Oil from "./particles/oil";
 import Sand from "./particles/sand";
 import Water from "./particles/water";
@@ -13,7 +14,7 @@ class Screen {
             let pixelsPerChunk = (particleSize * chunkSize)
             let widthInChunks = Math.floor(windowWidth / pixelsPerChunk);
             let heightInChunks = Math.floor(windowHeight / pixelsPerChunk);
-            //return [ 256, 256, 32, 32, 4, 4 ];
+            // return [ 1024, 1024, 16, 16, 1, 1 ];
             return [
                 widthInChunks * pixelsPerChunk,     // screen width px
                 heightInChunks * pixelsPerChunk,    // screen height px
@@ -252,6 +253,10 @@ class Screen {
                 break;
             case "oil":
                 this.set(x, y, new Oil());
+                break;
+            case "metal":
+                this.set(x, y, new Metal());
+                break;
         }
     }
 

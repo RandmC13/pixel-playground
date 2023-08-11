@@ -17,7 +17,7 @@ class ParticleUpdate {
             return this.loadedParticles[position];
         
         const particle = this.chunk.getRelative(this.x + offsetX, this.y + offsetY);
-        this.loadedParticles[position] = particle;
+        //this.loadedParticles[position] = particle;
         return particle;
     }
 
@@ -32,7 +32,7 @@ class ParticleUpdate {
     }
 
     replaceWith(newParticle) {
-        this.updates.push([this.x, this.y, newParticle]);
+        this.updates.push([this.x, this.y, newParticle.withUpdateCooldown(1)]);
         return this;
     }
 
