@@ -1,3 +1,5 @@
+import ParticleUpdate from "./lib/update";
+
 /*Potential particle properties:
 -colour
 -type
@@ -31,6 +33,11 @@ const particles = {
         colour: [55,58,54],
         density: 0.8,
         liquid: true
+    },
+    "metal": {
+        colour: [127,127,127],
+        density: 100,
+        liquid: false
     }
 };
 
@@ -44,15 +51,31 @@ const getParticleList = () => {
 
 class Particle {
     constructor(type, stationary) {
+        this.colour = getColour(type);
         this.type = type;
         this.colour = particles[this.type]["colour"];
         this.density = particles[this.type]["density"];
         this.liquid = particles[this.type]["liquid"];
         this.static = stationary;
+        this.updateCooldown = 0;
     }
 
-    update() {
-        return false;
+    withUpdateCooldown(cooldown) {
+        this.updateCooldown = cooldown;
+        return this;
+    }
+
+    process(x, y, chunk) {
+        if (this.updateCooldown > 0) {
+            this.updateCooldown--;
+            return ParticleUpdate.NullUpdate;
+        }
+
+        return this.update(x, y, chunk);
+    }
+
+    update(x, y, chunk) {
+        return [];
     }
 
     sink(x,y,grid) {

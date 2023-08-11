@@ -1,19 +1,21 @@
 //Imports
 import p5 from "p5";
 
+import Debug from "./debug";
 import Screen from "./screen";
 import Sand from "./particles/sand";
 import { getColour } from "./particle";
 
 const sketch = (p) => {
 	//Defining variables
-	let screen;
+	let screen, debug;
 
 	let mouseHeld = false;
 	let mouseNotMovedYet = true;
 
 	const particleSize = 8;
-	const framerate = 30;
+	const chunkSize = 4;
+	let framerate = 60;
 
 	//Function runs once on page load
 	p.setup = () => {
@@ -22,60 +24,100 @@ const sketch = (p) => {
 		p.background(...getColour("air"));
 
 		//Define screen object
-		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, p);
-		
-		//Set frame rate and create the canvas
+		screen = new Screen(p.windowWidth, p.windowHeight, particleSize, chunkSize, p);
+		//Set frame rate
 		p.frameRate(framerate);
-		p.createCanvas(screen.width, screen.height);
+
+		const { canvas } = p.createCanvas(screen.pixelWidth, screen.pixelHeight);
+		// Ensure canvas is selected
+		canvas.focus();
+		// Prevent right click from opening menu
+		canvas.addEventListener("contextmenu", (e) => e.preventDefault())
+
+		debug = new Debug(false, screen, p, {
+			framerate,
+			chunkSize,
+			particleSize,
+		});
+		screen.drawAll();
 	};
 
 	//Game loop
 	p.draw = () => {
-		//Make stream of sand (place sand every 2 frames)
-		//if (screen.framenum % 3 == 0) screen.grid[Math.floor(screen.gridWidth/2)][15] = new Sand();
-
 		//If mouse is held, place a particle
 		if (mouseHeld && !mouseNotMovedYet) screen.cursorPlace();
 
 		//Step simulation every cycle of game loop
-		screen.stepSim();
-		//If sim is paused, draw pause text
-		if (screen.paused) screen.pauseText();
+		if (!screen.paused) {
+			screen.stepSim();
+			//if (screen.framenum % 2 == 0)
+			//	screen.set(screen.particleWidth / 2, 2, new Sand());
+		} else {
+			//If sim is paused, draw pause text
+			screen.pauseText();
+			screen.draw();
+		}
 		//Place cursor at mouse position
 		if (!mouseNotMovedYet) screen.drawCursor(p.mouseX,p.mouseY);
 	};
 
 	//Event that runs if mouse is pressed
 	p.mousePressed = () => {
-		mouseHeld = true;
+		// On right click, place only one particle
+		if (p.mouseButton === p.RIGHT)
+			screen.cursorPlace()
+		else
+			mouseHeld = true;
+
+		// prevent default behaviour
+		return false;
 	}
+
 	//Event that runs if mouse is released
 	p.mouseReleased = () => {
 		mouseHeld = false;
+
+		// prevent default behaviour
+		return false;
 	}
+
 	//Even that runs if key is pressed
 	p.keyPressed = () => {
-		//If space bar is pressed, toggle pause
-		if (p.keyCode == 32) screen.paused = !screen.paused;
-		//If up and down arrow keys are pressed, raise or lower brush radius
-		if (p.keyCode == p.UP_ARROW) {
-			if (screen.brushRadius < 10) screen.brushRadius++;
+		switch (p.keyCode) {
+			case 32:
+				//If space bar is pressed, toggle pause
+				screen.paused = !screen.paused;
+				break;
+			case p.UP_ARROW:
+				if (screen.brushRadius < 10) screen.brushRadius++;
+				break;
+			case p.DOWN_ARROW:
+				if (screen.brushRadius > 0) screen.brushRadius--;
+				break;
+			case p.LEFT_ARROW:
+				screen.switchParticle(-1);
+				break;
+			case p.RIGHT_ARROW:
+				screen.switchParticle(1)
+				break;
 		}
-		if (p.keyCode == p.DOWN_ARROW) {
-			if (screen.brushRadius > 0) screen.brushRadius--;
-		}
-		//If left and right arrow keys are pressed, switch between available particle types
-		if (p.keyCode == p.LEFT_ARROW) screen.switchParticle(-1);
-		if (p.keyCode == p.RIGHT_ARROW) screen.switchParticle(1);
+
 		//If s key is pressed whilst paused, un pause the simulation, step it and then pause again
 		if (p.keyCode == 83 && screen.paused) {
 			screen.paused = false;
 			screen.stepSim();
 			screen.paused = true;
 		}
+
+		// prevent default behaviour
+		return false;
 	}
+
 	p.mouseMoved = () => {
 		mouseNotMovedYet = false;
+
+		// prevent default behaviour
+		return false;
 	}
 };
 

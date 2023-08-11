@@ -1,60 +1,57 @@
 import { Particle } from "./particle";
+import ParticleUpdate from "./lib/update";
 
 class Liquid extends Particle {
     constructor(type) {
         super(type, false);
     }
 
-    update(x,y,grid) {
-        const goLeft = () => {
-            let clone = grid[x][y];
-            grid[x][y] = grid[x-1][y];
-            grid[x-1][y] = clone;
-        };
+    update(x,y,chunk) {
+        const update = new ParticleUpdate(this, x, y, chunk);
+        
+        if (update.canSink())
+            return update.sink();
 
-        const goRight = () => {
-            let clone = grid[x][y];
-            grid[x][y] = grid[x+1][y];
-            grid[x+1][y] = clone;
-        };
-
-        //If liquid can go down, do it
-        if (y+1 < grid[0].length) {
-            //Attempt to sink, if it works, exit the function
-            if (this.sink(x,y,grid)) return true;
-        }
         //Check if liquid can go left or right
         let left = false;
         let right = false;
 
-        if (x-1 >= 0) {
-            if (grid[x-1][y].liquid) left = true;
-        };
-        if (x+1 < grid.length) {
-            if (grid[x+1][y].liquid) right = true;
-        };
+        const particleLeft = update.getParticle(-1, 0);
+        if (particleLeft !== null && particleLeft.liquid && particleLeft.type !== this.type)
+            left = true;
+        
+        const particleRight = update.getParticle(1, 0);
+        if (particleRight !== null && particleRight.liquid && particleRight.type !== this.type)
+            right = true;
 
         //If liquid can go either way, choose a random direction
         if (left && right) {
-            if (Math.random() > 0.5) {
-                goLeft();
-                return true;
-            }
-
-            goRight();
-            return true;
+            if (Math.random() > 0.5)
+                return update
+                    .replaceWith(particleLeft)
+                    .moveLeft()
+                    .done();
+            else
+                return update
+                    .replaceWith(particleRight)
+                    .moveRight()
+                    .done();
         }
 
         //If liquid can only go one way, choose that way
         if (left) {
-            goLeft();
-            return true;
+            return update
+                .replaceWith(particleLeft)
+                .moveLeft()
+                .done();
         } else if (right) {
-            goRight();
-            return true;
+            return update
+                .replaceWith(particleRight)
+                .moveRight()
+                .done();
         }
 
-        return false;
+        return [];
     }
 }
 

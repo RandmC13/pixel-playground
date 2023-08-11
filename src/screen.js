@@ -1,77 +1,69 @@
+import ChunkManager from "./chunk";
 import { getColour, getParticleList } from "./particle";
 import Air from "./particles/air"
+import Metal from "./particles/metal";
 import Oil from "./particles/oil";
 import Sand from "./particles/sand";
 import Water from "./particles/water";
 
 class Screen {
-    constructor(windowWidth, windowHeight, particleSize, sketchObj) {
+    constructor(windowWidth, windowHeight, particleSize, chunkSize, sketchObj) {
         //Functions to initiate grid
         const calculateDimensions = (windowWidth, windowHeight, particleSize) => {
-            let width = Math.floor(windowWidth / particleSize) * particleSize;
-            let height = Math.floor(windowHeight / particleSize) * particleSize;
-            return [width,height];
+            // Misleading name: this is actually the how many pixels wide a chunk is
+            let pixelsPerChunk = (particleSize * chunkSize)
+            let widthInChunks = Math.floor(windowWidth / pixelsPerChunk);
+            let heightInChunks = Math.floor(windowHeight / pixelsPerChunk);
+            // return [ 1024, 1024, 16, 16, 1, 1 ];
+            return [
+                widthInChunks * pixelsPerChunk,     // screen width px
+                heightInChunks * pixelsPerChunk,    // screen height px
+                widthInChunks * chunkSize,          // screen width in particles
+                heightInChunks * chunkSize,         // screen height in particles
+                widthInChunks,                      // screen width in chunks
+                heightInChunks                      // screen height in chunks
+            ];
         }
 
-        const generateGrid = (particleSize) => {
-            let cols = this.width / particleSize;
-            let colHeight = this.height / particleSize;
-
-            let grid = new Array(cols);
-
-            for (var x=0;x<cols;x++) {
-                grid[x] = new Array(colHeight).fill(new Air());
-            }
-
-            return grid;
-        }
-
-        let dimensions = calculateDimensions(windowWidth,windowHeight,particleSize);
+        [
+            this.pixelWidth, this.pixelHeight,
+            this.particleWidth, this.particleHeight,
+            this.chunkWidth, this.chunkHeight
+        ] = calculateDimensions(windowWidth,windowHeight,particleSize);
 
         this.p = sketchObj;
-        this.width = dimensions[0];
-        this.height = dimensions[1];
-        this.particleSize = particleSize;
-        this.grid = generateGrid(this.particleSize);
-        this.gridWidth = this.grid.length;
-        this.gridHeight = this.grid[0].length;
         this.particleList = getParticleList();
         this.particleSelected = 0;
-        this.paused = false;
         this.framenum = 0;
+
+        this.particleSize = particleSize;
+        this.chunkSize = chunkSize;
+
+        this.chunks = new ChunkManager(this.chunkWidth, this.chunkHeight, this.chunkSize);
+
+        this.paused = false;
         this.cursor = [0,0];
+        this.brushes = {};
         this.brushRadius = 0;
-        this.brushList = [];
+
+        for (let radius = 0; radius < 20; radius++) {
+            this.generateBrush(radius);
+        }
     };
 
+    drawAll() {
+        this.chunks.drawAllChunks(this.p, this.particleSize);
+    }
+    
+    draw() {
+        this.chunks.draw(this.p, this.particleSize);
+    }
+
     stepSim() {
-        /*
-        A snapshot of the grid is made by cloning the array. This allows the draw cycle and simulation cycle to be in the same for loop.
-        By using a snapshot, the simulation can be propogated throughout the grid without affecting what is drawn on the screen.
+        this.chunks.process();
+        this.draw();
+        // this.chunks.drawAllChunks(this.p, this.particleSize);
 
-        The snapshot is what is drawn every frame but the changes made by running the simulation are made to the main grid. This also solves the problem
-        of having delete themselves if two are competing for the same square as simulations are propogated continuously rather than in a lump-sum method.
-        */
-
-        //Take a snapshot of the grid
-        let gridSnapshot = [...this.grid].map(row => [...row]);
-
-        for (var y=0;y<gridSnapshot[0].length;y++) {
-            for (var x=0;x<gridSnapshot.length;x++) {
-                //Draw grid snapshot
-                this.p.fill(...gridSnapshot[x][y].colour);
-                this.p.square(...this.getDrawCoords(x,y),this.particleSize);
-                
-                //Step simulation
-                //Only step sim if it is not paused
-                if (!this.paused) {
-                    //If particle is static no need to update it
-                    if (gridSnapshot[x][y].static) continue;
-                    //If particle is not static, run simulation but store the changes in the main grid
-                    gridSnapshot[x][y].update(x,y,this.grid);
-                }
-            }
-        }
         //Increment framenum if sim is unpaused
         if (!this.paused) this.framenum++;
     };
@@ -80,8 +72,8 @@ class Screen {
         let gridX = Math.floor(x / this.particleSize);
         let gridY = Math.floor(y / this.particleSize);
 
-        if (gridX < 0 || gridX > this.grid.length-1) return false;
-        if (gridY < 0 || gridY > this.grid[0].length-1) return false;
+        if (gridX < 0 || gridX > this.particleWidth-1) return false;
+        if (gridY < 0 || gridY > this.particleHeight-1) return false;
 
         return [gridX,gridY];
     }
@@ -127,28 +119,97 @@ class Screen {
         return true;
     }
 
+    generateBrush(r) {
+        // Rather than generating brushes on the fly, we can generate a series of offsets
+        // on simulation start and apply them to hopefully get a speed up
+        // Using the big brush size seems to cut the FPS in half
+        const offsets = [[0,0]];
+        if (r === 0) {
+            this.brushes[r] = offsets;
+            return;
+        }
+
+        // Array.includes compares by reference (JS add Tuples already)
+        // So we will convert the point to a string and store it in a set
+        // to check if the point is already included. Slow, but this code is only
+        // run once at start.
+        const includedPoints = new Set(["0,0"]);
+
+        const absR = (r + 0.5) * this.particleSize;
+        const minR = Math.sqrt(2) * 0.5 * this.particleSize; //in radians
+        const TWO_PI = 2 * Math.PI;
+
+        for (let theta = 0; theta < TWO_PI; theta += 0.05) {
+            for (let radius = 0; radius < absR + (0.5 * this.particleSize); radius += minR) {
+                const pointX = Math.floor((radius * Math.sin(theta)) / this.particleSize);
+                const pointY = Math.floor((radius * Math.cos(theta)) / this.particleSize);
+                const [offsetX, offsetY] = [Math.floor(pointX), Math.floor(pointY)];
+                const pointString = `${offsetX},${offsetY}`;
+                if (includedPoints.has(pointString)) continue;
+
+                const centreX = (pointX + 0.5) * this.particleSize;
+                const centreY = (pointY + 0.5) * this.particleSize;
+                const distance = Math.sqrt((centreX * centreX) + (centreY * centreY));
+
+                if (absR >= distance) {
+                    offsets.push([offsetX, offsetY]);
+                    includedPoints.add(pointString);
+                }
+            }
+        }
+
+        this.brushes[r] = offsets;
+    }
+
+    *getBrushParticles() {
+        // Generator function is used to avoid looping over the items twice
+        const [x,y] = this.cursor;
+
+        for (const offset of this.brushes[this.brushRadius]) {
+            yield [x + offset[0], y + offset[1]];
+        }
+    }
+
     drawCursor(mouseX, mouseY) {
         const alpha = 25;
         //Set colour
         let colour = getColour(this.particleList[this.particleSelected]).map(n => n+alpha);
         this.p.fill(colour);
 
-        let cursor = this.getGridCoords(mouseX, mouseY);
+        let cursor = (this.brushRadius === 0) ? this.getGridCoords(mouseX, mouseY) : this.getGridCoords(mouseX + 0.5 * this.particleSize, mouseY + 0.5 * this.particleSize);
         if (cursor) this.cursor = cursor;
 
-        let [x,y] = this.cursor;
+        const particles = this.getBrushParticles();
 
-        let [centerX,centerY] = this.getDrawCoords(x,y).map(n => n+(0.5*this.particleSize));
-        this.particlesInRadius(centerX,centerY,this.brushRadius);
+        for (const particle of particles)
+            this.p.square(...this.getDrawCoords(particle[0], particle[1]), this.particleSize);
 
-        //Draw each particle
-        this.brushList.forEach(particle => {
-            this.p.square(...this.getDrawCoords(...particle),this.particleSize);
-        });
+        const brushChunks = this.getBrushChunks(...this.cursor);
+        for (const chunk of brushChunks)
+            chunk.markUpdated();
+        
+    }
+
+    getBrushChunks(x, y) {
+        const chunks = new Set();
+        chunks.add(this.chunks.getChunkFor(x, y));
+        let chunkRadius = Math.ceil(this.brushRadius / this.chunkSize) + 1;
+        for (let chunkX = 0; chunkX < chunkRadius; chunkX++) {
+            for (let chunkY = 0; chunkY < chunkRadius; chunkY++) {
+                chunks.add(this.chunks.getChunkFor(x - chunkX * this.chunkSize, y - chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x + chunkX * this.chunkSize, y - chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x - chunkX * this.chunkSize, y + chunkY * this.chunkSize));
+                chunks.add(this.chunks.getChunkFor(x + chunkX * this.chunkSize, y + chunkY * this.chunkSize));
+            }
+        }
+
+        chunks.delete(null);
+        return chunks;
     }
 
     cursorPlace() {
-        this.brushList.forEach(particle => this.placeParticle(...particle));
+        for (const particle of this.getBrushParticles())
+            this.placeParticle(...particle);
     }
 
     pauseText() {
@@ -182,17 +243,25 @@ class Screen {
         //Place particle based off of current cursor setting
         switch(this.particleList[this.particleSelected]) {
             case "sand":
-                this.grid[x][y] = new Sand();
+                this.set(x, y, new Sand());
                 break;
             case "air":
-                this.grid[x][y] = new Air();
+                this.set(x, y, new Air());
                 break;
             case "water":
-                this.grid[x][y] = new Water();
+                this.set(x, y, new Water());
                 break;
             case "oil":
-                this.grid[x][y] = new Oil();
+                this.set(x, y, new Oil());
+                break;
+            case "metal":
+                this.set(x, y, new Metal());
+                break;
         }
+    }
+
+    set(x, y, particle) {
+        this.chunks.set(x, y, particle);
     }
 };
 
